@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KSH Acute Care Flow Chart</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --panel: #111118;
+    --border: #1e1e2e;
+    --available: #1a4a1a;
+    --available-border: #2ecc71;
+    --within2: #4a3a00;
+    --within2-border: #f1c40f;
+    --over2: #4a2000;
+    --over2-border: #e67e22;
+    --over4: #4a0000;
+    --over4-border: #e74c3c;
+    --observation: #003366;
+    --observation-border: #3498db;
+    --text: #e0e0e0;
+    --dim: #888;
+    --accent: #00d4ff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    padding: 16px;
+  }
+
+  /* ─── HEADER ─── */
+  .header {
+    text-align: center;
+    padding: 12px 0 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .header h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  .header .subtitle {
+    font-size: 0.85rem;
+    color: var(--dim);
+    letter-spacing: 2px;
+    margin-top: 4px;
+  }
+
+  /* ─── CONFIG BAR ─── */
+  .config-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #0d1520;
+    border: 1px solid #1a3a5c;
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .config-bar label { font-size: 0.8rem; color: var(--dim); white-space: nowrap; }
+  .config-bar input {
+    flex: 1;
+    min-width: 280px;
+    background: #0a1520;
+    border: 1px solid #1a3a5c;
+    color: var(--accent);
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.78rem;
+  }
+  .config-bar button {
+    background: #0d3a6e;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 6px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .config-bar button:hover { background: #1a5aae; }
+  #sync-status {
+    font-size: 0.78rem;
+    color: var(--dim);
+    white-space: nowrap;
+  }
+  #sync-status.ok { color: #2ecc71; }
+  #sync-status.err { color: #e74c3c; }
+  #sync-status.loading { color: #f1c40f; }
+
+  /* ─── BEDS GRID ─── */
+  .beds-section { margin-bottom: 24px; }
+  .section-title {
+    font-size: 1.1rem;
+    letter-spacing: 3px;
+    color: var(--dim);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+  .beds-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  /* ─── BED CARD ─── */
+  .bed-card {
+    border-radius: 6px;
+    border: 2px solid var(--border);
+    overflow: hidden;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    background: var(--panel);
+  }
+  .bed-card:hover { box-shadow: 0 0 12px rgba(0,212,255,0.15); }
+
+  .bed-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    cursor: pointer;
+  }
+  .bed-number {
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+  }
+  .bed-status-select {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.75rem;
+    cursor: pointer;
+    outline: none;
+    padding: 2px;
+    max-width: 80px;
+  }
+  .bed-status-select option { background: #111; color: #fff; }
+
+  .bed-body {
+    padding: 6px 8px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px 6px;
+    font-size: 0.7rem;
+  }
+  .field-label { color: var(--dim); }
+  .field-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    color: #fff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    width: 100%;
+    padding: 1px 2px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field-input:focus { border-bottom-color: var(--accent); }
+  .field-input.full-width { grid-column: 1 / -1; }
+
+  /* Status colors */
+  .bed-card.available   { border-color: var(--available-border); }
+  .bed-card.available .bed-header { background: var(--available); }
+
+  .bed-card.within2hr   { border-color: var(--within2-border); }
+  .bed-card.within2hr .bed-header { background: var(--within2); }
+
+  .bed-card.over2hr     { border-color: var(--over2-border); }
+  .bed-card.over2hr .bed-header { background: var(--over2); }
+
+  .bed-card.over4hr     { border-color: var(--over4-border); }
+  .bed-card.over4hr .bed-header { background: var(--over4); }
+
+  .bed-card.observation { border-color: var(--observation-border); }
+  .bed-card.observation .bed-header { background: var(--observation); }
+
+  /* ─── LEGEND ─── */
+  .legend {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    align-items: center;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: var(--dim);
+  }
+  .legend-dot {
+    width: 12px; height: 12px;
+    border-radius: 2px;
+    border: 2px solid;
+  }
+
+  /* ─── STATS ─── */
+  .stats-bar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .stat-box {
+    flex: 1;
+    min-width: 100px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+  }
+  .stat-box .stat-label { font-size: 0.7rem; color: var(--dim); margin-bottom: 4px; letter-spacing: 1px; }
+  .stat-box .stat-value { font-size: 2rem; font-weight: 700; }
+  .stat-box.available-stat .stat-value { color: var(--available-border); }
+  .stat-box.observation-stat .stat-value { color: #3498db; }
+  .stat-box.acu-stat .stat-value { color: var(--available-border); }
+  .stat-box.over4-stat .stat-value { color: var(--over4-border); }
+
+  /* ─── TEAM TABLE ─── */
+  .team-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+  }
+  @media (max-width: 700px) { .team-section { grid-template-columns: 1fr; } }
+
+  .team-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .team-panel-title {
+    background: #0d1520;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  .team-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  .team-table th {
+    padding: 6px 8px;
+    background: #0a1015;
+    color: var(--dim);
+    text-align: left;
+    font-weight: 600;
+    letter-spacing: 1px;
+    font-size: 0.7rem;
+  }
+  .team-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .team-table td input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid transparent;
+    color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.78rem;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .team-table td input:focus { border-bottom-color: var(--accent); }
+
+  /* ─── SAVE BTN ─── */
+  .save-btn {
+    display: block;
+    margin: 20px auto 0;
+    background: linear-gradient(135deg, #0d3a6e, #0a5a3a);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 12px 40px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+  .save-btn:hover { box-shadow: 0 0 20px rgba(0,212,255,0.3); }
+
+  .toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: #0d3a2e;
+    border: 1px solid #2ecc71;
+    color: #2ecc71;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s;
+    pointer-events: none;
+    z-index: 9999;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.error { background: #3a0d0d; border-color: #e74c3c; color: #e74c3c; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>KSH Acute Care Flow Chart</h1>
+  <div class="subtitle">ACUTE CARE UNIT · LIVE DASHBOARD</div>
+</div>
+
+<!-- Google Apps Script URL Config -->
+<div class="config-bar">
+  <label>APPS SCRIPT URL:</label>
+  <input type="text" id="script-url" placeholder="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec" />
+  <button onclick="testConnection()">TEST</button>
+  <button onclick="loadFromSheet()">⬇ LOAD</button>
+  <span id="sync-status">● NOT CONNECTED</span>
+</div>
+
+<!-- Stats -->
+<div class="stats-bar" id="stats-bar">
+  <div class="stat-box observation-stat"><div class="stat-label">OBSERVATION BEDS</div><div class="stat-value" id="stat-obs">0</div></div>
+  <div class="stat-box available-stat"><div class="stat-label">PATIENTS PENDING</div><div class="stat-value" id="stat-pending">0</div></div>
+  <div class="stat-box acu-stat"><div class="stat-label">AVAILABLE ACU</div><div class="stat-value" id="stat-avail">0</div></div>
+  <div class="stat-box over4-stat"><div class="stat-label">MORE THAN 4 HR</div><div class="stat-value" id="stat-over4">0</div></div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#1a4a1a;border-color:#2ecc71"></div> Available Bed</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#4a3a00;border-color:#f1c40f"></div> Within 2 hr</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#4a2000;border-color:#e67e22"></div> More than 2 hr</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#4a0000;border-color:#e74c3c"></div> More than 4 hr</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#003366;border-color:#3498db"></div> For Observation</div>
+</div>
+
+<!-- Beds Grid -->
+<div class="beds-section">
+  <div class="section-title">Beds 11 – 18</div>
+  <div class="beds-grid" id="grid-top"></div>
+</div>
+<div class="beds-section">
+  <div class="section-title">Beds 4 – 10</div>
+  <div class="beds-grid" id="grid-bottom"></div>
+</div>
+
+<!-- Team Section -->
+<div class="team-section">
+  <div class="team-panel">
+    <div class="team-panel-title">Internal Medicine Team</div>
+    <table class="team-table">
+      <tr><th>Role</th><th>Specialty</th><th>Pager</th><th>Phone</th></tr>
+      <tr><td>IM 1st</td><td><input id="t-im1-spec"></td><td><input id="t-im1-pager"></td><td><input id="t-im1-phone"></td></tr>
+      <tr><td>IM 2nd</td><td><input id="t-im2-spec"></td><td><input id="t-im2-pager"></td><td><input id="t-im2-phone"></td></tr>
+      <tr><td>GS 1st</td><td><input id="t-gs1-spec"></td><td><input id="t-gs1-pager"></td><td><input id="t-gs1-phone"></td></tr>
+      <tr><td>GS 2nd</td><td><input id="t-gs2-spec"></td><td><input id="t-gs2-pager"></td><td><input id="t-gs2-phone"></td></tr>
+    </table>
+  </div>
+  <div class="team-panel">
+    <div class="team-panel-title">Ortho / Radiology Team</div>
+    <table class="team-table">
+      <tr><th>Role</th><th>Specialty</th><th>Pager</th><th>Phone</th></tr>
+      <tr><td>Ortho 1st</td><td><input id="t-orth1-spec"></td><td><input id="t-orth1-pager"></td><td><input id="t-orth1-phone"></td></tr>
+      <tr><td>Ortho 2nd</td><td><input id="t-orth2-spec"></td><td><input id="t-orth2-pager"></td><td><input id="t-orth2-phone"></td></tr>
+      <tr><td>Radiology</td><td><input id="t-rad-spec"></td><td><input id="t-rad-pager"></td><td><input id="t-rad-phone"></td></tr>
+      <tr><td>Radiology US</td><td><input id="t-radus-spec"></td><td><input id="t-radus-pager"></td><td><input id="t-radus-phone"></td></tr>
+    </table>
+  </div>
+  <div class="team-panel">
+    <div class="team-panel-title">Team Assignment</div>
+    <table class="team-table">
+      <tr><th>Role</th><th>Name</th></tr>
+      <tr><td>ED Team Leader</td><td><input id="t-edleader"></td></tr>
+      <tr><td>1st Triage Doctor</td><td><input id="t-triage1"></td></tr>
+      <tr><td>2nd Triage Doctor</td><td><input id="t-triage2"></td></tr>
+      <tr><td>Nursing Team Leader</td><td><input id="t-nurseleader"></td></tr>
+      <tr><td>G.O.A.T Bandar</td><td><input id="t-bandar" value="Bandar"></td></tr>
+    </table>
+  </div>
+</div>
+
+<button class="save-btn" onclick="saveToSheet()">⬆ SAVE TO GOOGLE SHEETS</button>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── BED DATA ───
+const STATUS_MAP = {
+  available:   { label: 'Available',      class: 'available' },
+  within2hr:   { label: 'Within 2 hr',    class: 'within2hr' },
+  over2hr:     { label: 'Over 2 hr',      class: 'over2hr' },
+  over4hr:     { label: 'Over 4 hr',      class: 'over4hr' },
+  observation: { label: 'Observation',    class: 'observation' },
+};
+
+// Initial bed data (matches screenshot)
+const INITIAL_BEDS = [
+  { id: 18, status: 'over4hr', mrn: '11355', timeFile: '0718', timeER: '21:40', nurse: '', doctor: '' },
+  { id: 17, status: 'over4hr', mrn: '', timeFile: '', timeER: '00:00', nurse: '', doctor: 'BANDER' },
+  { id: 16, status: 'over4hr', mrn: '', timeFile: '', timeER: '00:00', nurse: '', doctor: 'BANDER' },
+  { id: 15, status: 'over4hr', mrn: '', timeFile: '', timeER: '00:00', nurse: '', doctor: 'BANDER' },
+  { id: 14, status: 'over4hr', mrn: '25552', timeFile: '', timeER: '23:01', nurse: '', doctor: 'BANDER' },
+  { id: 13, status: 'over4hr', mrn: '', timeFile: '', timeER: '00:00', nurse: '', doctor: 'ABDULLAH' },
+  { id: 12, status: 'over4hr', mrn: '', timeFile: '', timeER: '00:00', nurse: '', doctor: 'ABDULLAH' },
+  { id: 11, status: 'over4hr', mrn: '', timeFile: '', timeER: '00:00', nurse: '', doctor: 'ABDULLAH' },
+  { id: 10, status: 'available', mrn: '', timeFile: '', timeER: '00:00', nurse: '', doctor: 'ABDULLAH' },
+  { id: 9,  status: 'over4hr', mrn: '13000113683', timeFile: '0737', timeER: '21:19', nurse: 'asma', doctor: 'ABDULLAH' },
+  { id: 8,  status: 'available', mrn: '', timeFile: '', timeER: '00:00', nurse: 'asma', doctor: 'MUBASHIR' },
+  { id: 7,  status: 'available', mrn: '', timeFile: '', timeER: '00:00', nurse: 'asma', doctor: 'MUBASHIR' },
+  { id: 6,  status: 'over4hr', mrn: '880816', timeFile: '', timeER: '21:11', nurse: 'alanoud', doctor: 'MUBASHIR' },
+  { id: 5,  status: 'over4hr', mrn: '13000113991', timeFile: '9800', timeER: '20:56', nurse: 'alanoud', doctor: 'MUBASHIR' },
+  { id: 4,  status: 'available', mrn: '', timeFile: '', timeER: '00:00', nurse: 'alanoud', doctor: 'MUBASHIR' },
+];
+
+const topBeds    = INITIAL_BEDS.filter(b => b.id >= 11 && b.id <= 18).sort((a,b) => b.id - a.id);
+const bottomBeds = INITIAL_BEDS.filter(b => b.id >= 4  && b.id <= 10).sort((a,b) => b.id - a.id);
+
+function createBedCard(bed) {
+  const card = document.createElement('div');
+  card.className = `bed-card ${STATUS_MAP[bed.status].class}`;
+  card.id = `bed-${bed.id}`;
+  card.innerHTML = `
+    <div class="bed-header">
+      <div class="bed-number">${bed.id}</div>
+      <select class="bed-status-select" onchange="updateStatus(${bed.id}, this.value)">
+        ${Object.entries(STATUS_MAP).map(([k,v]) =>
+          `<option value="${k}" ${k===bed.status?'selected':''}>${v.label}</option>`
+        ).join('')}
+      </select>
+    </div>
+    <div class="bed-body">
+      <span class="field-label">MRN</span>
+      <input class="field-input" id="bed-${bed.id}-mrn" value="${bed.mrn}" placeholder="—" oninput="markDirty()">
+      <span class="field-label">Time File</span>
+      <input class="field-input" id="bed-${bed.id}-timeFile" value="${bed.timeFile}" placeholder="0000" oninput="markDirty()">
+      <span class="field-label">Time in ER</span>
+      <input class="field-input" id="bed-${bed.id}-timeER" value="${bed.timeER}" placeholder="00:00" oninput="markDirty()">
+      <span class="field-label">Nurse</span>
+      <input class="field-input" id="bed-${bed.id}-nurse" value="${bed.nurse}" placeholder="—" oninput="markDirty()">
+      <span class="field-label">Doctor</span>
+      <input class="field-input" id="bed-${bed.id}-doctor" value="${bed.doctor}" placeholder="—" oninput="markDirty()">
+    </div>
+  `;
+  return card;
+}
+
+function updateStatus(bedId, newStatus) {
+  const card = document.getElementById(`bed-${bedId}`);
+  Object.values(STATUS_MAP).forEach(v => card.classList.remove(v.class));
+  card.classList.add(STATUS_MAP[newStatus].class);
+  updateStats();
+  markDirty();
+}
+
+function updateStats() {
+  const allBeds = [...document.querySelectorAll('.bed-card')];
+  let avail=0, obs=0, over4=0, pending=0;
+  allBeds.forEach(card => {
+    const sel = card.querySelector('.bed-status-select');
+    const mrn = card.querySelector('[id$="-mrn"]');
+    const status = sel ? sel.value : '';
+    if (status === 'available') avail++;
+    if (status === 'observation') obs++;
+    if (status === 'over4hr') over4++;
+    if (mrn && mrn.value) pending++;
+  });
+  document.getElementById('stat-avail').textContent  = avail;
+  document.getElementById('stat-obs').textContent    = obs;
+  document.getElementById('stat-over4').textContent  = over4;
+  document.getElementById('stat-pending').textContent= pending;
+}
+
+// Render
+topBeds.forEach(b => document.getElementById('grid-top').appendChild(createBedCard(b)));
+bottomBeds.forEach(b => document.getElementById('grid-bottom').appendChild(createBedCard(b)));
+updateStats();
+
+// ─── DIRTY FLAG ───
+let dirty = false;
+function markDirty() {
+  dirty = true;
+  updateStats();
+}
+
+// ─── COLLECT DATA ───
+function collectData() {
+  const beds = [];
+  INITIAL_BEDS.forEach(b => {
+    const id = b.id;
+    const card = document.getElementById(`bed-${id}`);
+    const status = card.querySelector('.bed-status-select').value;
+    beds.push({
+      id,
+      status,
+      mrn:      document.getElementById(`bed-${id}-mrn`).value,
+      timeFile: document.getElementById(`bed-${id}-timeFile`).value,
+      timeER:   document.getElementById(`bed-${id}-timeER`).value,
+      nurse:    document.getElementById(`bed-${id}-nurse`).value,
+      doctor:   document.getElementById(`bed-${id}-doctor`).value,
+    });
+  });
+
+  const team = {
+    im1:    { spec: v('t-im1-spec'), pager: v('t-im1-pager'), phone: v('t-im1-phone') },
+    im2:    { spec: v('t-im2-spec'), pager: v('t-im2-pager'), phone: v('t-im2-phone') },
+    gs1:    { spec: v('t-gs1-spec'), pager: v('t-gs1-pager'), phone: v('t-gs1-phone') },
+    gs2:    { spec: v('t-gs2-spec'), pager: v('t-gs2-pager'), phone: v('t-gs2-phone') },
+    orth1:  { spec: v('t-orth1-spec'), pager: v('t-orth1-pager'), phone: v('t-orth1-phone') },
+    orth2:  { spec: v('t-orth2-spec'), pager: v('t-orth2-pager'), phone: v('t-orth2-phone') },
+    rad:    { spec: v('t-rad-spec'), pager: v('t-rad-pager'), phone: v('t-rad-phone') },
+    radus:  { spec: v('t-radus-spec'), pager: v('t-radus-pager'), phone: v('t-radus-phone') },
+    edLeader:    v('t-edleader'),
+    triage1:     v('t-triage1'),
+    triage2:     v('t-triage2'),
+    nurseLeader: v('t-nurseleader'),
+    bandar:      v('t-bandar'),
+  };
+  return { beds, team, timestamp: new Date().toISOString() };
+}
+function v(id) { return document.getElementById(id)?.value || ''; }
+
+// ─── GOOGLE APPS SCRIPT COMMUNICATION ───
+function getUrl() {
+  const url = document.getElementById('script-url').value.trim();
+  if (!url || !url.startsWith('https://script.google.com')) {
+    showToast('❌ Please enter a valid Apps Script URL', true);
+    return null;
+  }
+  return url;
+}
+
+function setStatus(msg, cls) {
+  const el = document.getElementById('sync-status');
+  el.textContent = msg;
+  el.className = cls;
+}
+
+async function testConnection() {
+  const url = getUrl(); if (!url) return;
+  setStatus('● TESTING...', 'loading');
+  try {
+    const r = await fetch(url + '?action=ping');
+    const d = await r.json();
+    if (d.status === 'ok') {
+      setStatus('● CONNECTED ✓', 'ok');
+      showToast('✓ Connection successful!');
+    } else throw new Error();
+  } catch {
+    setStatus('● ERROR', 'err');
+    showToast('❌ Connection failed. Check your URL.', true);
+  }
+}
+
+async function saveToSheet() {
+  const url = getUrl(); if (!url) return;
+  setStatus('● SAVING...', 'loading');
+  const data = collectData();
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'save', data }),
+    });
+    const d = await r.json();
+    if (d.status === 'ok') {
+      setStatus('● SAVED ✓ ' + new Date().toLocaleTimeString(), 'ok');
+      dirty = false;
+      showToast('✓ Saved to Google Sheets!');
+    } else throw new Error(d.message);
+  } catch(e) {
+    setStatus('● SAVE ERROR', 'err');
+    showToast('❌ Save failed: ' + e.message, true);
+  }
+}
+
+async function loadFromSheet() {
+  const url = getUrl(); if (!url) return;
+  setStatus('● LOADING...', 'loading');
+  try {
+    const r = await fetch(url + '?action=load');
+    const d = await r.json();
+    if (d.status === 'ok' && d.data) {
+      applyData(d.data);
+      setStatus('● LOADED ✓', 'ok');
+      showToast('✓ Loaded from Google Sheets!');
+    } else throw new Error(d.message);
+  } catch(e) {
+    setStatus('● LOAD ERROR', 'err');
+    showToast('❌ Load failed: ' + e.message, true);
+  }
+}
+
+function applyData(data) {
+  if (data.beds) {
+    data.beds.forEach(b => {
+      const card = document.getElementById(`bed-${b.id}`);
+      if (!card) return;
+      const sel = card.querySelector('.bed-status-select');
+      if (sel) { sel.value = b.status; updateStatus(b.id, b.status); }
+      ['mrn','timeFile','timeER','nurse','doctor'].forEach(f => {
+        const el = document.getElementById(`bed-${b.id}-${f}`);
+        if (el) el.value = b[f] || '';
+      });
+    });
+  }
+  if (data.team) {
+    const t = data.team;
+    const map = {
+      'im1': ['spec','pager','phone'], 'im2': ['spec','pager','phone'],
+      'gs1': ['spec','pager','phone'], 'gs2': ['spec','pager','phone'],
+      'orth1': ['spec','pager','phone'], 'orth2': ['spec','pager','phone'],
+      'rad': ['spec','pager','phone'], 'radus': ['spec','pager','phone'],
+    };
+    Object.entries(map).forEach(([key, fields]) => {
+      if (t[key]) fields.forEach(f => {
+        const el = document.getElementById(`t-${key}-${f}`);
+        if (el) el.value = t[key][f] || '';
+      });
+    });
+    ['edLeader','triage1','triage2','nurseLeader','bandar'].forEach(k => {
+      const map2 = { edLeader:'t-edleader', triage1:'t-triage1', triage2:'t-triage2', nurseLeader:'t-nurseleader', bandar:'t-bandar' };
+      const el = document.getElementById(map2[k]);
+      if (el && t[k]) el.value = t[k];
+    });
+  }
+  updateStats();
+}
+
+// Auto-save every 2 min if dirty
+setInterval(() => {
+  if (dirty && getUrl()) saveToSheet();
+}, 120000);
+
+// ─── TOAST ───
+function showToast(msg, isError=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 3000);
+}
+</script>
+
+<!-- ══════════════════════════════════════════════════
+     GOOGLE APPS SCRIPT CODE - Copy to script.google.com
+════════════════════════════════════════════════════
+
+function doGet(e) {
+  const action = e.parameter.action;
+  if (action === 'ping') return json({ status: 'ok' });
+  if (action === 'load') return json(loadData());
+  return json({ status: 'error', message: 'Unknown action' });
+}
+
+function doPost(e) {
+  const body = JSON.parse(e.postData.contents);
+  if (body.action === 'save') {
+    saveData(body.data);
+    return json({ status: 'ok' });
+  }
+  return json({ status: 'error', message: 'Unknown action' });
+}
+
+function json(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+const SHEET_NAME = 'Acute Care Unit';
+
+function saveData(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
+  sheet.clearContents();
+
+  // Headers
+  sheet.getRange(1,1,1,8).setValues([['Bed','Status','MRN','Time File','Time ER','Nurse','Doctor','Last Updated']]);
+
+  // Bed rows
+  const rows = data.beds.map(b => [b.id, b.status, b.mrn, b.timeFile, b.timeER, b.nurse, b.doctor, data.timestamp]);
+  sheet.getRange(2, 1, rows.length, 8).setValues(rows);
+
+  // Team section
+  let r = data.beds.length + 4;
+  sheet.getRange(r, 1).setValue('TEAM ASSIGNMENT');
+  r++;
+  const t = data.team;
+  const teamRows = [
+    ['ED Team Leader', t.edLeader, '1st Triage', t.triage1],
+    ['Nursing Leader', t.nurseLeader, '2nd Triage', t.triage2],
+    ['IM 1st', t.im1?.spec, t.im1?.pager, t.im1?.phone],
+    ['IM 2nd', t.im2?.spec, t.im2?.pager, t.im2?.phone],
+    ['GS 1st', t.gs1?.spec, t.gs1?.pager, t.gs1?.phone],
+    ['GS 2nd', t.gs2?.spec, t.gs2?.pager, t.gs2?.phone],
+    ['Ortho 1st', t.orth1?.spec, t.orth1?.pager, t.orth1?.phone],
+    ['Ortho 2nd', t.orth2?.spec, t.orth2?.pager, t.orth2?.phone],
+    ['Radiology', t.rad?.spec, t.rad?.pager, t.rad?.phone],
+    ['Radiology US', t.radus?.spec, t.radus?.pager, t.radus?.phone],
+  ];
+  sheet.getRange(r, 1, teamRows.length, 4).setValues(teamRows);
+}
+
+function loadData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) return { status: 'error', message: 'Sheet not found' };
+
+  const rows = sheet.getDataRange().getValues();
+  const beds = [];
+  for (let i = 1; i < rows.length; i++) {
+    if (!rows[i][0] || isNaN(rows[i][0])) break;
+    beds.push({ id: rows[i][0], status: rows[i][1], mrn: rows[i][2],
+      timeFile: rows[i][3], timeER: rows[i][4], nurse: rows[i][5], doctor: rows[i][6] });
+  }
+  return { status: 'ok', data: { beds } };
+}
+
+════════════════════════════════════════════════════ -->
+</body>
+</html>
