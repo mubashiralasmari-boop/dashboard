@@ -326,6 +326,29 @@
   }
   .toast.show { opacity: 1; transform: translateY(0); }
   .toast.error { background: #3a0d0d; border-color: #e74c3c; color: #e74c3c; }
+
+  .elapsed {
+    font-size: 0.75rem;
+    font-family: 'Share Tech Mono', monospace;
+    text-align: center;
+    padding: 3px 0;
+    letter-spacing: 1px;
+    font-weight: bold;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .elapsed.green  { color: #2ecc71; }
+  .elapsed.yellow { color: #f1c40f; }
+  .elapsed.orange { color: #e67e22; }
+  .elapsed.red    { color: #e74c3c; background: rgba(231,76,60,0.1); }
+
+  .ksa-clock {
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
 </style>
 </head>
 <body>
@@ -343,6 +366,9 @@
   <button onclick="loadFromSheet()">⬇ LOAD</button>
   <span id="sync-status">● NOT CONNECTED</span>
 </div>
+
+<!-- KSA Clock -->
+<div class="ksa-clock" id="ksa-clock">🕐 KSA TIME: --:--:--</div>
 
 <!-- Stats -->
 <div class="stats-bar" id="stats-bar">
@@ -467,6 +493,7 @@ function createBedCard(bed) {
       <span class="field-label">Doctor</span>
       <input class="field-input" id="bed-${bed.id}-doctor" value="${bed.doctor}" placeholder="—" oninput="markDirty()">
     </div>
+    <div class="elapsed" id="bed-${bed.id}-elapsed">--:--</div>
   `;
   return card;
 }
@@ -656,6 +683,93 @@ function applyData(data) {
 setInterval(() => {
   if (dirty && getUrl()) saveToSheet();
 }, 120000);
+
+// ─── KSA TIME & ELAPSED ───
+function getKSATime() {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Riyadh' }));
+}
+
+function parseTimeFile(val) {
+  if (!val) return null;
+  val = val.toString().trim().replace(':', '');
+  if (val.length < 3) return null;
+  val = val.padStart(4, '0');
+  const h = parseInt(val.substring(0, 2));
+  const m = parseInt(val.substring(2, 4));
+  if (isNaN(h) || isNaN(m) || h > 23 || m > 59) return null;
+  const now = getKSATime();
+  const t = new Date(now);
+  t.setHours(h, m, 0, 0);
+  // If time is in the future, assume it was yesterday
+  if (t > now) t.setDate(t.getDate() - 1);
+  return t;
+}
+
+function updateElapsed() {
+  const now = getKSATime();
+
+  // Update clock
+  document.getElementById('ksa-clock').textContent =
+    '🕐 KSA TIME: ' + now.toTimeString().substring(0,8);
+
+  INITIAL_BEDS.forEach(b => {
+    const timeFileEl = document.getElementById(`bed-${b.id}-timeFile`);
+    const elapsedEl  = document.getElementById(`bed-${b.id}-elapsed`);
+    const card       = document.getElementById(`bed-${b.id}`);
+    const statusSel  = card?.querySelector('.bed-status-select');
+    if (!timeFileEl || !elapsedEl || !card) return;
+
+    // Skip available beds
+    const status = statusSel?.value;
+    if (status === 'available') {
+      elapsedEl.textContent = 'AVAILABLE';
+      elapsedEl.className = 'elapsed green';
+      return;
+    }
+
+    const fileTime = parseTimeFile(timeFileEl.value);
+    if (!fileTime) {
+      elapsedEl.textContent = '--:--';
+      elapsedEl.className = 'elapsed';
+      return;
+    }
+
+    const diffMs  = now - fileTime;
+    const diffMin = Math.floor(diffMs / 60000);
+    const hours   = Math.floor(diffMin / 60);
+    const mins    = diffMin % 60;
+    const label   = `${String(hours).padStart(2,'0')}:${String(mins).padStart(2,'0')} hr`;
+
+    elapsedEl.textContent = label;
+
+    // Auto color based on elapsed time (only if not manually set to observation)
+    if (status !== 'observation') {
+      // Remove old status classes
+      Object.values(STATUS_MAP).forEach(v => card.classList.remove(v.class));
+      let newStatus;
+      if (diffMin < 120) {
+        newStatus = 'within2hr';
+        elapsedEl.className = 'elapsed green';
+      } else if (diffMin < 240) {
+        newStatus = 'over2hr';
+        elapsedEl.className = 'elapsed yellow';
+      } else {
+        newStatus = 'over4hr';
+        elapsedEl.className = 'elapsed red';
+      }
+      card.classList.add(STATUS_MAP[newStatus].class);
+      if (statusSel) statusSel.value = newStatus;
+    } else {
+      elapsedEl.className = 'elapsed';
+    }
+  });
+
+  updateStats();
+}
+
+// Run every second
+setInterval(updateElapsed, 1000);
+updateElapsed();
 
 // ─── TOAST ───
 function showToast(msg, isError=false) {
