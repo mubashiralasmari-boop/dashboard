@@ -1,860 +1,1968 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KSH Acute Care Flow Chart</title>
+<title>نظام المناوبات — KSH</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap');
+:root {
+  --bg: #070c18;
+  --surface: #0d1526;
+  --card: #111e35;
+  --border: #1a2d4a;
+  --border2: #243d5e;
+  --accent: #2563eb;
+  --accent-light: #3b82f6;
+  --cyan: #06b6d4;
+  --gold: #f59e0b;
+  --green: #10b981;
+  --red: #ef4444;
+  --orange: #f97316;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #475569;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Tajawal', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
 
-  :root {
-    --bg: #0a0a0f;
-    --panel: #111118;
-    --border: #1e1e2e;
-    --available: #1a4a1a;
-    --available-border: #2ecc71;
-    --within2: #4a3a00;
-    --within2-border: #f1c40f;
-    --over2: #4a2000;
-    --over2-border: #e67e22;
-    --over4: #4a0000;
-    --over4-border: #e74c3c;
-    --observation: #003366;
-    --observation-border: #3498db;
-    --text: #e0e0e0;
-    --dim: #888;
-    --accent: #00d4ff;
-  }
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+/* ===== LAYOUT ===== */
+.app { display: flex; min-height: 100vh; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Rajdhani', sans-serif;
-    min-height: 100vh;
-    padding: 16px;
-  }
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 240px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  padding: 20px 0;
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 100;
+  transition: transform .3s;
+}
+.sidebar-logo {
+  padding: 0 16px 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.sidebar-logo h2 { font-size: 16px; font-weight: 800; }
+.sidebar-logo h2 span { color: var(--cyan); }
+.sidebar-logo p { font-size: 11px; color: var(--text3); margin-top: 2px; }
 
-  /* ─── HEADER ─── */
-  .header {
-    text-align: center;
-    padding: 12px 0 20px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 20px;
-  }
-  .header h1 {
-    font-size: 2.2rem;
-    font-weight: 700;
-    letter-spacing: 4px;
-    color: var(--accent);
-    text-transform: uppercase;
-  }
-  .header .subtitle {
-    font-size: 0.85rem;
-    color: var(--dim);
-    letter-spacing: 2px;
-    margin-top: 4px;
-  }
+.sidebar-section {
+  padding: 0 8px;
+  margin-bottom: 8px;
+}
+.sidebar-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding: 0 8px;
+  margin-bottom: 6px;
+}
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all .2s;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  width: 100%;
+  background: none;
+  border: none;
+  font-family: 'Tajawal', sans-serif;
+  text-align: right;
+}
+.sidebar-item:hover { background: var(--card); color: var(--text); }
+.sidebar-item.active { background: rgba(37,99,235,.2); color: #93c5fd; border: 1px solid rgba(37,99,235,.3); }
+.sidebar-item .item-icon { font-size: 16px; flex-shrink: 0; }
+.sidebar-item .item-count {
+  margin-right: auto;
+  background: var(--border2);
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 11px;
+  color: var(--text2);
+}
 
-  /* ─── CONFIG BAR ─── */
-  .config-bar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: #0d1520;
-    border: 1px solid #1a3a5c;
-    border-radius: 8px;
-    padding: 10px 16px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-  }
-  .config-bar label { font-size: 0.8rem; color: var(--dim); white-space: nowrap; }
-  .config-bar input {
-    flex: 1;
-    min-width: 280px;
-    background: #0a1520;
-    border: 1px solid #1a3a5c;
-    color: var(--accent);
-    padding: 6px 10px;
-    border-radius: 4px;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.78rem;
-  }
-  .config-bar button {
-    background: #0d3a6e;
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    padding: 6px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 600;
-    font-size: 0.85rem;
-    white-space: nowrap;
-    transition: all 0.2s;
-  }
-  .config-bar button:hover { background: #1a5aae; }
-  #sync-status {
-    font-size: 0.78rem;
-    color: var(--dim);
-    white-space: nowrap;
-  }
-  #sync-status.ok { color: #2ecc71; }
-  #sync-status.err { color: #e74c3c; }
-  #sync-status.loading { color: #f1c40f; }
+.add-dept-btn {
+  margin: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  border: 1px dashed var(--border2);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text3);
+  background: none;
+  font-family: 'Tajawal', sans-serif;
+  transition: all .2s;
+  width: calc(100% - 16px);
+}
+.add-dept-btn:hover { border-color: var(--accent-light); color: var(--accent-light); }
 
-  /* ─── BEDS GRID ─── */
-  .beds-section { margin-bottom: 24px; }
-  .section-title {
-    font-size: 1.1rem;
-    letter-spacing: 3px;
-    color: var(--dim);
-    margin-bottom: 12px;
-    text-transform: uppercase;
-  }
-  .beds-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 10px;
-  }
+/* ===== MAIN ===== */
+.main {
+  margin-right: 240px;
+  flex: 1;
+  padding: 24px 20px;
+  max-width: calc(100vw - 240px);
+}
 
-  /* ─── BED CARD ─── */
-  .bed-card {
-    border-radius: 6px;
-    border: 2px solid var(--border);
-    overflow: hidden;
-    transition: border-color 0.3s, box-shadow 0.3s;
-    background: var(--panel);
-  }
-  .bed-card:hover { box-shadow: 0 0 12px rgba(0,212,255,0.15); }
+/* ===== TOPBAR ===== */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.topbar-left h1 { font-size: 20px; font-weight: 800; }
+.topbar-left p { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.today-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 16px;
+  font-size: 13px;
+}
+.today-badge .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; flex-shrink: 0; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.4;transform:scale(1.5);} }
 
-  .bed-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 8px;
-    cursor: pointer;
-  }
-  .bed-number {
-    font-size: 1.6rem;
-    font-weight: 700;
-    line-height: 1;
-    color: #fff;
-  }
-  .bed-status-select {
-    background: transparent;
-    border: none;
-    color: #fff;
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 0.75rem;
-    cursor: pointer;
-    outline: none;
-    padding: 2px;
-    max-width: 80px;
-  }
-  .bed-status-select option { background: #111; color: #fff; }
+/* ===== QUICK ONCALL CARD ===== */
+.oncall-hero {
+  background: linear-gradient(135deg, #0f2045 0%, #0d1526 60%);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.oncall-hero::before {
+  content: '';
+  position: absolute;
+  top: -40px; left: -40px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(37,99,235,.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-title {
+  font-size: 13px;
+  color: var(--text3);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hero-title span { color: var(--cyan); font-weight: 700; }
+.oncall-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.oncall-slot {
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+}
+.oncall-slot:hover { border-color: var(--accent-light); background: rgba(37,99,235,.08); }
+.oncall-slot .slot-label { font-size: 10px; color: var(--text3); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+.oncall-slot .slot-name { font-size: 15px; font-weight: 700; color: var(--text); }
+.oncall-slot .slot-phone { font-size: 11px; color: var(--cyan); margin-top: 4px; direction: ltr; }
+.oncall-slot.r1 { border-color: rgba(239,68,68,.3); }
+.oncall-slot.r1 .slot-name { color: #fca5a5; }
+.oncall-slot.r2 { border-color: rgba(249,115,22,.3); }
+.oncall-slot.r2 .slot-name { color: #fdba74; }
+.oncall-slot.con { border-color: rgba(59,130,246,.3); }
+.oncall-slot.con .slot-name { color: #93c5fd; }
+/* ===== SHIFT SECTIONS (IM multi-shift) ===== */
+.shift-section-block {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.shift-section-block.active-shift {
+  border-color: var(--shift-color, var(--border2));
+  box-shadow: 0 0 0 1px var(--shift-color, transparent);
+}
+.shift-section-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px; font-weight: 800;
+}
+.shift-now-badge {
+  font-size: 10px; padding: 2px 8px; border-radius: 10px;
+  font-weight: 800; margin-right: auto;
+}
+.shift-time-label { font-size: 11px; color: var(--text3); direction: ltr; }
+.shift-people-list { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.shift-person-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; transition: border-color .2s;
+}
+.shift-person-row:hover { border-color: var(--border2); }
+.shift-pa { width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+.shift-pi { flex:1; }
+.shift-pname { font-size:13px; font-weight:700; }
+.shift-prole { font-size:10px; color: var(--text3); }
+.active-shift-now {
+  display:flex; align-items:center; gap:8px;
+  padding:10px 14px; border-radius:12px;
+  margin-bottom:14px; font-size:13px; font-weight:700;
+}
+.active-shift-dot { width:8px; height:8px; border-radius:50%; animation: pulse 2s infinite; flex-shrink:0; }
 
-  .bed-body {
-    padding: 6px 8px;
-    border-top: 1px solid rgba(255,255,255,0.05);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 3px 6px;
-    font-size: 0.7rem;
-  }
-  .field-label { color: var(--dim); }
-  .field-input {
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    color: #fff;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.7rem;
-    width: 100%;
-    padding: 1px 2px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .field-input:focus { border-bottom-color: var(--accent); }
-  .field-input.full-width { grid-column: 1 / -1; }
+.empty-slot { color: var(--text3) !important; font-style: italic; font-size: 13px !important; }
 
-  /* Status colors */
-  .bed-card.available   { border-color: var(--available-border); }
-  .bed-card.available .bed-header { background: var(--available); }
+/* ===== SECTION VIEWS ===== */
+.view { display: none; }
+.view.active { display: block; }
 
-  .bed-card.within2hr   { border-color: var(--within2-border); }
-  .bed-card.within2hr .bed-header { background: var(--within2); }
+/* ===== DEPT HEADER ===== */
+.dept-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.dept-info { display: flex; align-items: center; gap: 12px; }
+.dept-icon-big {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.dept-name { font-size: 18px; font-weight: 800; }
+.dept-sub { font-size: 12px; color: var(--text2); }
+.dept-actions { display: flex; gap: 8px; }
 
-  .bed-card.over2hr     { border-color: var(--over2-border); }
-  .bed-card.over2hr .bed-header { background: var(--over2); }
+/* ===== TABS ===== */
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+  overflow-x: auto;
+}
+.tab {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text3);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: 'Tajawal', sans-serif;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+  transition: all .2s;
+}
+.tab:hover { color: var(--text2); }
+.tab.active { color: var(--accent-light); border-bottom-color: var(--accent-light); }
 
-  .bed-card.over4hr     { border-color: var(--over4-border); }
-  .bed-card.over4hr .bed-header { background: var(--over4); }
+/* ===== CONTACT TABLE ===== */
+.contact-table { width: 100%; }
+.ct-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 6px;
+  transition: all .2s;
+}
+.ct-row:hover { border-color: var(--border2); }
+.ct-avatar {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.ct-info { flex: 1; }
+.ct-name { font-size: 14px; font-weight: 600; }
+.ct-role { font-size: 11px; color: var(--text3); }
+.ct-phone { font-size: 13px; color: var(--cyan); direction: ltr; font-weight: 600; text-decoration: none; }
+.ct-phone:hover { color: var(--accent-light); }
+.ct-actions { display: flex; gap: 6px; }
+.icon-btn {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text3);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  transition: all .2s;
+}
+.icon-btn:hover { background: var(--border); color: var(--text); }
+.icon-btn.danger:hover { background: rgba(239,68,68,.15); border-color: rgba(239,68,68,.4); color: #ef4444; }
 
-  .bed-card.observation { border-color: var(--observation-border); }
-  .bed-card.observation .bed-header { background: var(--observation); }
+/* ===== BUTTONS ===== */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  border: none;
+  font-family: 'Tajawal', sans-serif;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-light); }
+.btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--border2); }
+.btn-danger { background: rgba(239,68,68,.15); color: #ef4444; border: 1px solid rgba(239,68,68,.3); }
+.btn-danger:hover { background: rgba(239,68,68,.25); }
+.btn-cyan { background: rgba(6,182,212,.15); color: var(--cyan); border: 1px solid rgba(6,182,212,.3); }
+.btn-cyan:hover { background: rgba(6,182,212,.25); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
 
-  /* ─── LEGEND ─── */
-  .legend {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
-    align-items: center;
-  }
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.78rem;
-    color: var(--dim);
-  }
-  .legend-dot {
-    width: 12px; height: 12px;
-    border-radius: 2px;
-    border: 2px solid;
-  }
+/* ===== UPLOAD ZONE ===== */
+.upload-zone {
+  border: 2px dashed var(--border2);
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .3s;
+  background: var(--card);
+}
+.upload-zone:hover, .upload-zone.drag { border-color: var(--accent-light); background: rgba(37,99,235,.05); }
+.upload-icon { font-size: 40px; margin-bottom: 12px; }
+.upload-zone h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.upload-zone p { font-size: 12px; color: var(--text2); }
 
-  /* ─── STATS ─── */
-  .stats-bar {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 24px;
-  }
-  .stat-box {
-    flex: 1;
-    min-width: 100px;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-    text-align: center;
-  }
-  .stat-box .stat-label { font-size: 0.7rem; color: var(--dim); margin-bottom: 4px; letter-spacing: 1px; }
-  .stat-box .stat-value { font-size: 2rem; font-weight: 700; }
-  .stat-box.available-stat .stat-value { color: var(--available-border); }
-  .stat-box.observation-stat .stat-value { color: #3498db; }
-  .stat-box.acu-stat .stat-value { color: var(--available-border); }
-  .stat-box.over4-stat .stat-value { color: var(--over4-border); }
+/* ===== AI EXTRACTION ===== */
+.extraction-result {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.extraction-header {
+  background: rgba(6,182,212,.1);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cyan);
+}
+.extraction-body { padding: 16px; }
+.ai-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 6px;
+  margin-bottom: 4px;
+}
+.tag-consultant { background: rgba(59,130,246,.15); color: #93c5fd; }
+.tag-specialist { background: rgba(16,185,129,.15); color: #6ee7b7; }
+.tag-resident { background: rgba(245,158,11,.15); color: #fcd34d; }
+.tag-oncall { background: rgba(239,68,68,.15); color: #fca5a5; }
 
-  /* ─── TEAM TABLE ─── */
-  .team-section {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 16px;
-    margin-top: 20px;
-  }
-  @media (max-width: 700px) { .team-section { grid-template-columns: 1fr; } }
+/* ===== SCHEDULE TABLE ===== */
+.schedule-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 4px;
+  font-size: 13px;
+}
+.schedule-table th {
+  padding: 8px 12px;
+  color: var(--text3);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: right;
+}
+.schedule-table td {
+  padding: 10px 12px;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.schedule-table td:first-child { border-right: 1px solid var(--border); border-radius: 0 10px 10px 0; }
+.schedule-table td:last-child { border-left: 1px solid var(--border); border-radius: 10px 0 0 10px; }
+.sched-day { font-weight: 700; color: var(--text2); }
+.sched-name { font-weight: 600; }
+.sched-name.r1c { color: #fca5a5; }
+.sched-name.r2c { color: #fdba74; }
+.sched-name.conc { color: #93c5fd; }
 
-  .team-panel {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  .team-panel-title {
-    background: #0d1520;
-    padding: 8px 12px;
-    font-size: 0.8rem;
-    letter-spacing: 2px;
-    color: var(--accent);
-    text-transform: uppercase;
-  }
-  .team-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
-  .team-table th {
-    padding: 6px 8px;
-    background: #0a1015;
-    color: var(--dim);
-    text-align: left;
-    font-weight: 600;
-    letter-spacing: 1px;
-    font-size: 0.7rem;
-  }
-  .team-table td {
-    padding: 5px 8px;
-    border-bottom: 1px solid var(--border);
-  }
-  .team-table td input {
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid transparent;
-    color: #fff;
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 0.78rem;
-    width: 100%;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .team-table td input:focus { border-bottom-color: var(--accent); }
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.7);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .3s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: scale(.95);
+  transition: transform .3s;
+}
+.modal-overlay.open .modal { transform: scale(1); }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.modal-header h3 { font-size: 16px; font-weight: 800; }
+.modal-close { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: none; color: var(--text2); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+.modal-close:hover { background: var(--card); }
 
-  /* ─── SAVE BTN ─── */
-  .save-btn {
-    display: block;
-    margin: 20px auto 0;
-    background: linear-gradient(135deg, #0d3a6e, #0a5a3a);
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    padding: 12px 40px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 700;
-    font-size: 1rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    transition: all 0.2s;
-  }
-  .save-btn:hover { box-shadow: 0 0 20px rgba(0,212,255,0.3); }
+/* ===== FORM ===== */
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 6px; display: block; }
+.form-input {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: 'Tajawal', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border .2s;
+}
+.form-input:focus { border-color: var(--accent-light); }
+.form-input::placeholder { color: var(--text3); }
+select.form-input { cursor: pointer; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-  .toast {
-    position: fixed;
-    bottom: 24px; right: 24px;
-    background: #0d3a2e;
-    border: 1px solid #2ecc71;
-    color: #2ecc71;
-    padding: 12px 20px;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    letter-spacing: 1px;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.3s;
-    pointer-events: none;
-    z-index: 9999;
-  }
-  .toast.show { opacity: 1; transform: translateY(0); }
-  .toast.error { background: #3a0d0d; border-color: #e74c3c; color: #e74c3c; }
+/* ===== LOADING ===== */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px;
+  color: var(--text2);
+  font-size: 14px;
+}
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent-light);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-  .elapsed {
-    font-size: 0.75rem;
-    font-family: 'Share Tech Mono', monospace;
-    text-align: center;
-    padding: 3px 0;
-    letter-spacing: 1px;
-    font-weight: bold;
-    border-top: 1px solid rgba(255,255,255,0.08);
-  }
-  .elapsed.green  { color: #2ecc71; }
-  .elapsed.yellow { color: #f1c40f; }
-  .elapsed.orange { color: #e67e22; }
-  .elapsed.red    { color: #e74c3c; background: rgba(231,76,60,0.1); }
+/* ===== EMPTY ===== */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text3);
+}
+.empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state h3 { font-size: 16px; font-weight: 700; color: var(--text2); margin-bottom: 6px; }
+.empty-state p { font-size: 13px; }
 
-  .ksa-clock {
-    text-align: center;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.9rem;
-    color: var(--accent);
-    letter-spacing: 2px;
-    margin-bottom: 16px;
-  }
+/* ===== TOAST ===== */
+.toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.toast {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+  animation: slideUp .3s ease;
+  white-space: nowrap;
+}
+@keyframes slideUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.toast.success { border-color: rgba(16,185,129,.4); color: #6ee7b7; }
+.toast.error { border-color: rgba(239,68,68,.4); color: #fca5a5; }
+.toast.info { border-color: rgba(6,182,212,.4); color: var(--cyan); }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(100%); }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-right: 0; max-width: 100vw; padding: 16px 12px; }
+  .oncall-grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+  .mobile-menu-btn { display: flex !important; }
+}
+.mobile-menu-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 14px;
+  color: var(--text);
+  cursor: pointer;
+  font-family: 'Tajawal', sans-serif;
+  font-size: 13px;
+}
+
+/* ===== MISC ===== */
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.spacer { flex: 1; }
+.text-muted { color: var(--text3); font-size: 12px; }
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.badge-blue { background: rgba(59,130,246,.15); color: #93c5fd; border: 1px solid rgba(59,130,246,.2); }
+.badge-green { background: rgba(16,185,129,.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,.2); }
+.badge-orange { background: rgba(249,115,22,.15); color: #fdba74; border: 1px solid rgba(249,115,22,.2); }
+.badge-red { background: rgba(239,68,68,.15); color: #fca5a5; border: 1px solid rgba(239,68,68,.2); }
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media(max-width:600px) { .grid-2 { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>KSH Acute Care Flow Chart</h1>
-  <div class="subtitle">ACUTE CARE UNIT · LIVE DASHBOARD</div>
-</div>
+<div class="app">
 
-<!-- Google Apps Script URL Config -->
-<div class="config-bar">
-  <label>APPS SCRIPT URL:</label>
-  <input type="text" id="script-url" placeholder="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec" />
-  <button onclick="testConnection()">TEST</button>
-  <button onclick="loadFromSheet()">⬇ LOAD</button>
-  <span id="sync-status">● NOT CONNECTED</span>
-</div>
-
-<!-- KSA Clock -->
-<div class="ksa-clock" id="ksa-clock">🕐 KSA TIME: --:--:--</div>
-
-<!-- Stats -->
-<div class="stats-bar" id="stats-bar">
-  <div class="stat-box observation-stat"><div class="stat-label">OBSERVATION BEDS</div><div class="stat-value" id="stat-obs">0</div></div>
-  <div class="stat-box available-stat"><div class="stat-label">PATIENTS PENDING</div><div class="stat-value" id="stat-pending">0</div></div>
-  <div class="stat-box acu-stat"><div class="stat-label">AVAILABLE ACU</div><div class="stat-value" id="stat-avail">0</div></div>
-  <div class="stat-box over4-stat"><div class="stat-label">MORE THAN 4 HR</div><div class="stat-value" id="stat-over4">0</div></div>
-</div>
-
-<!-- Legend -->
-<div class="legend">
-  <div class="legend-item"><div class="legend-dot" style="background:#1a4a1a;border-color:#2ecc71"></div> Available Bed</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#4a3a00;border-color:#f1c40f"></div> Within 2 hr</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#4a2000;border-color:#e67e22"></div> More than 2 hr</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#4a0000;border-color:#e74c3c"></div> More than 4 hr</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#003366;border-color:#3498db"></div> For Observation</div>
-</div>
-
-<!-- Beds Grid -->
-<div class="beds-section">
-  <div class="section-title">Beds 11 – 18</div>
-  <div class="beds-grid" id="grid-top"></div>
-</div>
-<div class="beds-section">
-  <div class="section-title">Beds 4 – 10</div>
-  <div class="beds-grid" id="grid-bottom"></div>
-</div>
-
-<!-- Team Section -->
-<div class="team-section">
-  <div class="team-panel">
-    <div class="team-panel-title">Internal Medicine Team</div>
-    <table class="team-table">
-      <tr><th>Role</th><th>Specialty</th><th>Pager</th><th>Phone</th></tr>
-      <tr><td>IM 1st</td><td><input id="t-im1-spec"></td><td><input id="t-im1-pager"></td><td><input id="t-im1-phone"></td></tr>
-      <tr><td>IM 2nd</td><td><input id="t-im2-spec"></td><td><input id="t-im2-pager"></td><td><input id="t-im2-phone"></td></tr>
-      <tr><td>GS 1st</td><td><input id="t-gs1-spec"></td><td><input id="t-gs1-pager"></td><td><input id="t-gs1-phone"></td></tr>
-      <tr><td>GS 2nd</td><td><input id="t-gs2-spec"></td><td><input id="t-gs2-pager"></td><td><input id="t-gs2-phone"></td></tr>
-    </table>
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <h2>KSH <span>On-Call</span></h2>
+    <p>نظام المناوبات الطبية</p>
   </div>
-  <div class="team-panel">
-    <div class="team-panel-title">Ortho / Radiology Team</div>
-    <table class="team-table">
-      <tr><th>Role</th><th>Specialty</th><th>Pager</th><th>Phone</th></tr>
-      <tr><td>Ortho 1st</td><td><input id="t-orth1-spec"></td><td><input id="t-orth1-pager"></td><td><input id="t-orth1-phone"></td></tr>
-      <tr><td>Ortho 2nd</td><td><input id="t-orth2-spec"></td><td><input id="t-orth2-pager"></td><td><input id="t-orth2-phone"></td></tr>
-      <tr><td>Radiology</td><td><input id="t-rad-spec"></td><td><input id="t-rad-pager"></td><td><input id="t-rad-phone"></td></tr>
-      <tr><td>Radiology US</td><td><input id="t-radus-spec"></td><td><input id="t-radus-pager"></td><td><input id="t-radus-phone"></td></tr>
-    </table>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">القائمة</div>
+    <button class="sidebar-item active" onclick="showView('dashboard')">
+      <span class="item-icon">🏠</span> الرئيسية
+    </button>
   </div>
-  <div class="team-panel">
-    <div class="team-panel-title">Team Assignment</div>
-    <table class="team-table">
-      <tr><th>Role</th><th>Name</th></tr>
-      <tr><td>ED Team Leader</td><td><input id="t-edleader"></td></tr>
-      <tr><td>1st Triage Doctor</td><td><input id="t-triage1"></td></tr>
-      <tr><td>2nd Triage Doctor</td><td><input id="t-triage2"></td></tr>
-      <tr><td>Nursing Team Leader</td><td><input id="t-nurseleader"></td></tr>
-      <tr><td>G.O.A.T Bandar</td><td><input id="t-bandar" value="Bandar"></td></tr>
-    </table>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">التخصصات</div>
+    <div id="deptList"></div>
+  </div>
+
+  <button class="add-dept-btn" onclick="openAddDept()">
+    ＋ إضافة تخصص
+  </button>
+
+  <div class="sidebar-section" style="margin-top:16px;">
+    <button class="sidebar-item" onclick="showView('manage')">
+      <span class="item-icon">⚙️</span> الإدارة
+    </button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="mobile-menu-btn" onclick="toggleSidebar()">☰ القائمة</button>
+    </div>
+    <div class="today-badge">
+      <div class="pulse"></div>
+      <span id="todayText">—</span>
+    </div>
+  </div>
+
+  <!-- DASHBOARD VIEW -->
+  <div class="view active" id="view-dashboard">
+    <div style="margin-bottom:20px;">
+      <h1 style="font-size:22px;font-weight:900;">لوحة المناوبات</h1>
+      <p class="text-muted" style="margin-top:4px;">اختر تخصصاً لعرض مناوبة اليوم</p>
+    </div>
+
+    <div id="dashboardCards"></div>
+
+    <div class="empty-state" id="dashboardEmpty" style="display:none;">
+      <div class="empty-icon">🏥</div>
+      <h3>لا توجد تخصصات بعد</h3>
+      <p>أضف تخصصاً من القائمة الجانبية لتبدأ</p>
+    </div>
+  </div>
+
+  <!-- DEPT VIEW -->
+  <div class="view" id="view-dept">
+    <div class="dept-header">
+      <div class="dept-info">
+        <div class="dept-icon-big" id="deptIconBig">👁️</div>
+        <div>
+          <div class="dept-name" id="deptNameTitle">—</div>
+          <div class="dept-sub" id="deptSubTitle">—</div>
+        </div>
+      </div>
+      <div class="dept-actions">
+        <button class="btn btn-cyan btn-sm" onclick="openUpload()">📎 رفع ملف PDF</button>
+        <button class="btn btn-secondary btn-sm" onclick="openAddPerson()">＋ إضافة شخص</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchDeptTab('oncall')">مناوبة اليوم</button>
+      <button class="tab" onclick="switchDeptTab('contacts')">جهات الاتصال</button>
+      <button class="tab" onclick="switchDeptTab('schedule')">جدول المناوبة</button>
+      <button class="tab" onclick="switchDeptTab('upload')">رفع / تحديث</button>
+    </div>
+
+    <div id="deptTabContent"></div>
+  </div>
+
+  <!-- MANAGE VIEW -->
+  <div class="view" id="view-manage">
+    <h1 style="font-size:20px;font-weight:900;margin-bottom:20px;">إدارة النظام</h1>
+    <div class="grid-2">
+      <div class="card" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">💾 النسخ الاحتياطي</h3>
+        <p class="text-muted" style="margin-bottom:14px;">حفظ جميع البيانات كملف JSON</p>
+        <button class="btn btn-secondary btn-sm" onclick="exportData()">تصدير البيانات</button>
+        <button class="btn btn-secondary btn-sm" style="margin-top:8px;" onclick="document.getElementById('importFile').click()">استيراد البيانات</button>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+      </div>
+      <div class="card" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">🗑️ مسح البيانات</h3>
+        <p class="text-muted" style="margin-bottom:14px;">مسح كامل لبيانات تخصص معين</p>
+        <select class="form-input" id="clearDeptSelect" style="margin-bottom:8px;"></select>
+        <button class="btn btn-danger btn-sm" onclick="clearDeptData()">مسح التخصص</button>
+      </div>
+      <div class="card" style="background:var(--card);border:1px solid rgba(245,158,11,.3);border-radius:14px;padding:20px;grid-column:1/-1;margin-top:4px;">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:8px;">🔄 إعادة تحميل التخصصات الافتراضية</h3>
+        <p class="text-muted" style="margin-bottom:14px;font-size:12px;">استخدم هذا الزر إذا لم تظهر التخصصات الجديدة (العظام، الباطنية، الجراحة العامة) في القائمة</p>
+        <button class="btn btn-sm" style="background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3);" onclick="resetToDefaults()">🔄 إعادة تحميل الكل</button>
+      </div>
+    </div>
+    <div style="margin-top:20px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;">
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;">📋 كيفية الاستخدام</h3>
+      <div style="display:grid;gap:10px;font-size:13px;color:var(--text2);">
+        <div style="display:flex;gap:10px;"><span style="color:var(--cyan);font-weight:700;">①</span> أضف تخصصاً جديداً من القائمة الجانبية</div>
+        <div style="display:flex;gap:10px;"><span style="color:var(--cyan);font-weight:700;">②</span> ارفع ملف PDF الجدول الشهري</div>
+        <div style="display:flex;gap:10px;"><span style="color:var(--cyan);font-weight:700;">③</span> سيستخرج النظام الأسماء والأرقام والجدول تلقائياً</div>
+        <div style="display:flex;gap:10px;"><span style="color:var(--cyan);font-weight:700;">④</span> يمكنك التعديل اليدوي في أي وقت</div>
+        <div style="display:flex;gap:10px;"><span style="color:var(--cyan);font-weight:700;">⑤</span> كل شهر ارفع الملف الجديد لتحديث الجدول</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- Add Department Modal -->
+<div class="modal-overlay" id="modalAddDept">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>إضافة تخصص جديد</h3>
+      <button class="modal-close" onclick="closeModal('modalAddDept')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">اسم التخصص (عربي)</label>
+      <input type="text" class="form-input" id="deptNameAr" placeholder="مثال: طب العيون">
+    </div>
+    <div class="form-group">
+      <label class="form-label">اسم التخصص (إنجليزي)</label>
+      <input type="text" class="form-input" id="deptNameEn" placeholder="مثال: Ophthalmology">
+    </div>
+    <div class="form-group">
+      <label class="form-label">الأيقونة</label>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;" id="iconPicker">
+        <button class="icon-pick" data-icon="👁️">👁️</button>
+        <button class="icon-pick" data-icon="🫀">🫀</button>
+        <button class="icon-pick" data-icon="🦴">🦴</button>
+        <button class="icon-pick" data-icon="🧠">🧠</button>
+        <button class="icon-pick" data-icon="🫁">🫁</button>
+        <button class="icon-pick" data-icon="🩺">🩺</button>
+        <button class="icon-pick" data-icon="🏥">🏥</button>
+        <button class="icon-pick" data-icon="💊">💊</button>
+        <button class="icon-pick" data-icon="🔬">🔬</button>
+        <button class="icon-pick" data-icon="🩻">🩻</button>
+        <button class="icon-pick" data-icon="🩹">🩹</button>
+        <button class="icon-pick" data-icon="⚕️">⚕️</button>
+      </div>
+    </div>
+    <input type="hidden" id="deptIconSelected" value="🏥">
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal('modalAddDept')">إلغاء</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveDept()">إضافة</button>
+    </div>
   </div>
 </div>
 
-<button class="save-btn" onclick="saveToSheet()">⬆ SAVE TO GOOGLE SHEETS</button>
+<!-- Add Person Modal -->
+<div class="modal-overlay" id="modalAddPerson">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="addPersonTitle">إضافة شخص</h3>
+      <button class="modal-close" onclick="closeModal('modalAddPerson')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">الاسم</label>
+      <input type="text" class="form-input" id="personName" placeholder="Dr. Ahmed">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">رقم الجوال</label>
+        <input type="tel" class="form-input" id="personPhone" placeholder="05XXXXXXXX" dir="ltr">
+      </div>
+      <div class="form-group">
+        <label class="form-label">الرتبة</label>
+        <select class="form-input" id="personRole">
+          <option value="consultant">استشاري</option>
+          <option value="specialist">أخصائي</option>
+          <option value="resident">رزيدنت</option>
+        </select>
+      </div>
+    </div>
+    <input type="hidden" id="editPersonId" value="">
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal('modalAddPerson')">إلغاء</button>
+      <button class="btn btn-primary" style="flex:1" onclick="savePerson()">حفظ</button>
+    </div>
+  </div>
+</div>
 
-<div class="toast" id="toast"></div>
+<!-- Upload Modal -->
+<div class="modal-overlay" id="modalUpload">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h3>رفع ملف PDF</h3>
+      <button class="modal-close" onclick="closeModal('modalUpload')">✕</button>
+    </div>
+
+    <div id="uploadStep1">
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('pdfInput').click()"
+           ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
+        <div class="upload-icon">📄</div>
+        <h3>اسحب الملف هنا أو اضغط للاختيار</h3>
+        <p>يدعم ملفات PDF — الجداول الشهرية وقوائم الاتصال</p>
+      </div>
+      <input type="file" id="pdfInput" accept=".pdf" style="display:none" onchange="handleFileSelect(event)">
+
+      <div style="margin-top:16px;padding:12px 14px;background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.2);border-radius:10px;">
+        <div style="font-size:12px;color:var(--cyan);font-weight:700;margin-bottom:6px;">💡 كيف يعمل الاستخراج التلقائي؟</div>
+        <div style="font-size:12px;color:var(--text2);">
+          عند رفع الملف، سيتم إرساله إلى Claude AI لاستخراج:<br>
+          • أسماء الأطباء وأرقام جوالاتهم ورتبهم<br>
+          • جدول المناوبة (المناوب الأول، الثاني، الاستشاري)<br>
+          بعدها يمكنك المراجعة والتأكيد قبل الحفظ
+        </div>
+      </div>
+    </div>
+
+    <div id="uploadStep2" style="display:none;">
+      <div class="loading" id="extractLoading">
+        <div class="spinner"></div>
+        <span>جاري استخراج البيانات بالذكاء الاصطناعي...</span>
+      </div>
+      <div id="extractResult" style="display:none;"></div>
+    </div>
+
+    <div id="uploadStep3" style="display:none;">
+      <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:12px;padding:14px;margin-bottom:16px;">
+        <div style="font-size:13px;color:#6ee7b7;font-weight:700;margin-bottom:4px;">✅ تم الاستخراج بنجاح</div>
+        <div style="font-size:12px;color:var(--text2);" id="extractSummary"></div>
+      </div>
+      <div id="previewData"></div>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button class="btn btn-secondary" style="flex:1" onclick="resetUpload()">إعادة المحاولة</button>
+        <button class="btn btn-primary" style="flex:1" onclick="confirmExtraction()">✅ حفظ البيانات</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Schedule Entry Modal -->
+<div class="modal-overlay" id="modalAddSchedule">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>إضافة يوم في الجدول</h3>
+      <button class="modal-close" onclick="closeModal('modalAddSchedule')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">التاريخ (يوم/شهر)</label>
+        <input type="text" class="form-input" id="schedDate" placeholder="26/2" dir="ltr">
+      </div>
+      <div class="form-group">
+        <label class="form-label">المناوب الأول</label>
+        <input type="text" class="form-input" id="sched1st" placeholder="AHMED">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">المناوب الثاني</label>
+        <input type="text" class="form-input" id="sched2nd" placeholder="TAHIR">
+      </div>
+      <div class="form-group">
+        <label class="form-label">الاستشاري</label>
+        <input type="text" class="form-input" id="schedCon" placeholder="HASSAN">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal('modalAddSchedule')">إلغاء</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveScheduleEntry()">حفظ</button>
+    </div>
+  </div>
+</div>
 
 <script>
-// ─── BED DATA ───
-const STATUS_MAP = {
-  available:   { label: 'Available',      class: 'available' },
-  within2hr:   { label: 'Within 2 hr',    class: 'within2hr' },
-  over2hr:     { label: 'Over 2 hr',      class: 'over2hr' },
-  over4hr:     { label: 'Over 4 hr',      class: 'over4hr' },
-  observation: { label: 'Observation',    class: 'observation' },
+// ========== STATE ==========
+let state = {
+  departments: {},
+  currentDept: null,
+  currentDeptTab: 'oncall',
+  pendingExtraction: null,
 };
 
-// Initial bed data (matches screenshot)
-const INITIAL_BEDS = [
-  { id: 18, status: 'over4hr', mrn: '11355', timeFile: '0718', timeER: '21:40', nurse: '', doctor: '' },
-  { id: 17, status: 'over4hr', mrn: '', timeFile: '', timeER: '00:00', nurse: '', doctor: 'BANDER' },
-  { id: 16, status: 'over4hr', mrn: '', timeFile: '', timeER: '00:00', nurse: '', doctor: 'BANDER' },
-  { id: 15, status: 'over4hr', mrn: '', timeFile: '', timeER: '00:00', nurse: '', doctor: 'BANDER' },
-  { id: 14, status: 'over4hr', mrn: '25552', timeFile: '', timeER: '23:01', nurse: '', doctor: 'BANDER' },
-  { id: 13, status: 'over4hr', mrn: '', timeFile: '', timeER: '00:00', nurse: '', doctor: 'ABDULLAH' },
-  { id: 12, status: 'over4hr', mrn: '', timeFile: '', timeER: '00:00', nurse: '', doctor: 'ABDULLAH' },
-  { id: 11, status: 'over4hr', mrn: '', timeFile: '', timeER: '00:00', nurse: '', doctor: 'ABDULLAH' },
-  { id: 10, status: 'available', mrn: '', timeFile: '', timeER: '00:00', nurse: '', doctor: 'ABDULLAH' },
-  { id: 9,  status: 'over4hr', mrn: '13000113683', timeFile: '0737', timeER: '21:19', nurse: 'asma', doctor: 'ABDULLAH' },
-  { id: 8,  status: 'available', mrn: '', timeFile: '', timeER: '00:00', nurse: 'asma', doctor: 'MUBASHIR' },
-  { id: 7,  status: 'available', mrn: '', timeFile: '', timeER: '00:00', nurse: 'asma', doctor: 'MUBASHIR' },
-  { id: 6,  status: 'over4hr', mrn: '880816', timeFile: '', timeER: '21:11', nurse: 'alanoud', doctor: 'MUBASHIR' },
-  { id: 5,  status: 'over4hr', mrn: '13000113991', timeFile: '9800', timeER: '20:56', nurse: 'alanoud', doctor: 'MUBASHIR' },
-  { id: 4,  status: 'available', mrn: '', timeFile: '', timeER: '00:00', nurse: 'alanoud', doctor: 'MUBASHIR' },
-];
+const STORAGE_KEY = 'ksh_oncall_v3';
 
-const topBeds    = INITIAL_BEDS.filter(b => b.id >= 11 && b.id <= 18).sort((a,b) => b.id - a.id);
-const bottomBeds = INITIAL_BEDS.filter(b => b.id >= 4  && b.id <= 10).sort((a,b) => b.id - a.id);
-
-function createBedCard(bed) {
-  const card = document.createElement('div');
-  card.className = `bed-card ${STATUS_MAP[bed.status].class}`;
-  card.id = `bed-${bed.id}`;
-  card.innerHTML = `
-    <div class="bed-header">
-      <div class="bed-number">${bed.id}</div>
-      <select class="bed-status-select" onchange="updateStatus(${bed.id}, this.value)">
-        ${Object.entries(STATUS_MAP).map(([k,v]) =>
-          `<option value="${k}" ${k===bed.status?'selected':''}>${v.label}</option>`
-        ).join('')}
-      </select>
-    </div>
-    <div class="bed-body">
-      <span class="field-label">MRN</span>
-      <input class="field-input" id="bed-${bed.id}-mrn" value="${bed.mrn}" placeholder="—" oninput="markDirty()">
-      <span class="field-label">Time File</span>
-      <input class="field-input" id="bed-${bed.id}-timeFile" value="${bed.timeFile}" placeholder="0000" oninput="markDirty()">
-      <span class="field-label">Time in ER</span>
-      <input class="field-input" id="bed-${bed.id}-timeER" value="${bed.timeER}" placeholder="00:00" oninput="markDirty()">
-      <span class="field-label">Nurse</span>
-      <input class="field-input" id="bed-${bed.id}-nurse" value="${bed.nurse}" placeholder="—" oninput="markDirty()">
-      <span class="field-label">Doctor</span>
-      <input class="field-input" id="bed-${bed.id}-doctor" value="${bed.doctor}" placeholder="—" oninput="markDirty()">
-    </div>
-    <div class="elapsed" id="bed-${bed.id}-elapsed">--:--</div>
-  `;
-  return card;
+// ========== PERSISTENCE ==========
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.departments));
+}
+function load() {
+  try {
+    const d = localStorage.getItem(STORAGE_KEY);
+    if (d) state.departments = JSON.parse(d);
+  } catch(e) { state.departments = {}; }
 }
 
-function updateStatus(bedId, newStatus) {
-  const card = document.getElementById(`bed-${bedId}`);
-  Object.values(STATUS_MAP).forEach(v => card.classList.remove(v.class));
-  card.classList.add(STATUS_MAP[newStatus].class);
-  updateStats();
-  markDirty();
-}
-
-function updateStats() {
-  const allBeds = [...document.querySelectorAll('.bed-card')];
-  let avail=0, obs=0, over4=0, pending=0;
-  allBeds.forEach(card => {
-    const sel = card.querySelector('.bed-status-select');
-    const mrn = card.querySelector('[id$="-mrn"]');
-    const status = sel ? sel.value : '';
-    if (status === 'available') avail++;
-    if (status === 'observation') obs++;
-    if (status === 'over4hr') over4++;
-    if (mrn && mrn.value) pending++;
+function mergePreloaded() {
+  // Always merge preloaded depts — adds missing ones, never overwrites user edits
+  let changed = false;
+  Object.values(PRELOADED_DEPTS).forEach(pd => {
+    if (!state.departments[pd.id]) {
+      state.departments[pd.id] = pd;
+      changed = true;
+    }
   });
-  document.getElementById('stat-avail').textContent  = avail;
-  document.getElementById('stat-obs').textContent    = obs;
-  document.getElementById('stat-over4').textContent  = over4;
-  document.getElementById('stat-pending').textContent= pending;
+  if (changed) save();
 }
 
-// Render
-topBeds.forEach(b => document.getElementById('grid-top').appendChild(createBedCard(b)));
-bottomBeds.forEach(b => document.getElementById('grid-bottom').appendChild(createBedCard(b)));
-updateStats();
-
-// ─── DIRTY FLAG ───
-let dirty = false;
-function markDirty() {
-  dirty = true;
-  updateStats();
+function resetToDefaults() {
+  if (!confirm('سيتم إعادة تحميل جميع التخصصات الافتراضية. هل تريد المتابعة؟')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  state.departments = {};
+  Object.values(PRELOADED_DEPTS).forEach(pd => { state.departments[pd.id] = pd; });
+  save();
+  renderSidebar();
+  renderDashboard();
+  toast('تم إعادة التحميل بنجاح ✅', 'success');
 }
 
-// ─── COLLECT DATA ───
-function collectData() {
-  const beds = [];
-  INITIAL_BEDS.forEach(b => {
-    const id = b.id;
-    const card = document.getElementById(`bed-${id}`);
-    const status = card.querySelector('.bed-status-select').value;
-    beds.push({
-      id,
-      status,
-      mrn:      document.getElementById(`bed-${id}-mrn`).value,
-      timeFile: document.getElementById(`bed-${id}-timeFile`).value,
-      timeER:   document.getElementById(`bed-${id}-timeER`).value,
-      nurse:    document.getElementById(`bed-${id}-nurse`).value,
-      doctor:   document.getElementById(`bed-${id}-doctor`).value,
-    });
-  });
-
-  const team = {
-    im1:    { spec: v('t-im1-spec'), pager: v('t-im1-pager'), phone: v('t-im1-phone') },
-    im2:    { spec: v('t-im2-spec'), pager: v('t-im2-pager'), phone: v('t-im2-phone') },
-    gs1:    { spec: v('t-gs1-spec'), pager: v('t-gs1-pager'), phone: v('t-gs1-phone') },
-    gs2:    { spec: v('t-gs2-spec'), pager: v('t-gs2-pager'), phone: v('t-gs2-phone') },
-    orth1:  { spec: v('t-orth1-spec'), pager: v('t-orth1-pager'), phone: v('t-orth1-phone') },
-    orth2:  { spec: v('t-orth2-spec'), pager: v('t-orth2-pager'), phone: v('t-orth2-phone') },
-    rad:    { spec: v('t-rad-spec'), pager: v('t-rad-pager'), phone: v('t-rad-phone') },
-    radus:  { spec: v('t-radus-spec'), pager: v('t-radus-pager'), phone: v('t-radus-phone') },
-    edLeader:    v('t-edleader'),
-    triage1:     v('t-triage1'),
-    triage2:     v('t-triage2'),
-    nurseLeader: v('t-nurseleader'),
-    bandar:      v('t-bandar'),
+// ========== DATE ==========
+function getSADate() {
+  const now = new Date();
+  const sa = new Date(now.getTime() + 3 * 3600 * 1000);
+  return {
+    d: sa.getUTCDate(),
+    m: sa.getUTCMonth() + 1,
+    dw: sa.getUTCDay(),
+    full: sa,
   };
-  return { beds, team, timestamp: new Date().toISOString() };
 }
-function v(id) { return document.getElementById(id)?.value || ''; }
+function getTodayKey() {
+  const {d,m} = getSADate();
+  return `${d}/${m}`;
+}
+function formatArabicDate() {
+  const {d,m,dw} = getSADate();
+  const days = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  return `${days[dw]} ${d} ${months[m-1]}`;
+}
 
-// ─── GOOGLE APPS SCRIPT COMMUNICATION ───
-function getUrl() {
-  const url = document.getElementById('script-url').value.trim();
-  if (!url || !url.startsWith('https://script.google.com')) {
-    showToast('❌ Please enter a valid Apps Script URL', true);
-    return null;
+// ========== PHONE LOOKUP ==========
+function getPhone(deptId, name) {
+  if (!name) return null;
+  const dept = state.departments[deptId];
+  if (!dept) return null;
+  const all = [...(dept.consultants||[]), ...(dept.specialists||[]), ...(dept.residents||[])];
+  const up = name.toUpperCase().trim();
+  for (const p of all) {
+    const pn = p.name.toUpperCase().replace(/DR\.\s*/g,'').trim();
+    if (pn === up || p.name.toUpperCase().trim() === up) return p.phone;
   }
-  return url;
+  return null;
 }
 
-function setStatus(msg, cls) {
-  const el = document.getElementById('sync-status');
-  el.textContent = msg;
-  el.className = cls;
-}
+// ========== VIEWS ==========
+function showView(name, deptId) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(`view-${name}`).classList.add('active');
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  if (name === 'dashboard') document.querySelector('[onclick="showView(\'dashboard\')"]').classList.add('active');
+  if (name === 'manage') document.querySelector('[onclick="showView(\'manage\')"]').classList.add('active');
 
-async function testConnection() {
-  const url = getUrl(); if (!url) return;
-  setStatus('● TESTING...', 'loading');
-  try {
-    const r = await fetch(url + '?action=ping');
-    const d = await r.json();
-    if (d.status === 'ok') {
-      setStatus('● CONNECTED ✓', 'ok');
-      showToast('✓ Connection successful!');
-    } else throw new Error();
-  } catch {
-    setStatus('● ERROR', 'err');
-    showToast('❌ Connection failed. Check your URL.', true);
-  }
-}
-
-async function saveToSheet() {
-  const url = getUrl(); if (!url) return;
-  setStatus('● SAVING...', 'loading');
-  const data = collectData();
-  try {
-    const r = await fetch(url, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'save', data }),
-    });
-    const d = await r.json();
-    if (d.status === 'ok') {
-      setStatus('● SAVED ✓ ' + new Date().toLocaleTimeString(), 'ok');
-      dirty = false;
-      showToast('✓ Saved to Google Sheets!');
-    } else throw new Error(d.message);
-  } catch(e) {
-    setStatus('● SAVE ERROR', 'err');
-    showToast('❌ Save failed: ' + e.message, true);
-  }
-}
-
-async function loadFromSheet() {
-  const url = getUrl(); if (!url) return;
-  setStatus('● LOADING...', 'loading');
-  try {
-    const r = await fetch(url + '?action=load');
-    const d = await r.json();
-    if (d.status === 'ok' && d.data) {
-      applyData(d.data);
-      setStatus('● LOADED ✓', 'ok');
-      showToast('✓ Loaded from Google Sheets!');
-    } else throw new Error(d.message);
-  } catch(e) {
-    setStatus('● LOAD ERROR', 'err');
-    showToast('❌ Load failed: ' + e.message, true);
-  }
-}
-
-function applyData(data) {
-  if (data.beds) {
-    data.beds.forEach(b => {
-      const card = document.getElementById(`bed-${b.id}`);
-      if (!card) return;
-      const sel = card.querySelector('.bed-status-select');
-      if (sel) { sel.value = b.status; updateStatus(b.id, b.status); }
-      ['mrn','timeFile','timeER','nurse','doctor'].forEach(f => {
-        const el = document.getElementById(`bed-${b.id}-${f}`);
-        if (el) el.value = b[f] || '';
-      });
+  if (name === 'dept' && deptId) {
+    state.currentDept = deptId;
+    renderDeptView(deptId);
+    // highlight sidebar
+    document.querySelectorAll('.sidebar-dept-item').forEach(i => {
+      i.classList.toggle('active', i.dataset.id === deptId);
     });
   }
-  if (data.team) {
-    const t = data.team;
-    const map = {
-      'im1': ['spec','pager','phone'], 'im2': ['spec','pager','phone'],
-      'gs1': ['spec','pager','phone'], 'gs2': ['spec','pager','phone'],
-      'orth1': ['spec','pager','phone'], 'orth2': ['spec','pager','phone'],
-      'rad': ['spec','pager','phone'], 'radus': ['spec','pager','phone'],
-    };
-    Object.entries(map).forEach(([key, fields]) => {
-      if (t[key]) fields.forEach(f => {
-        const el = document.getElementById(`t-${key}-${f}`);
-        if (el) el.value = t[key][f] || '';
-      });
-    });
-    ['edLeader','triage1','triage2','nurseLeader','bandar'].forEach(k => {
-      const map2 = { edLeader:'t-edleader', triage1:'t-triage1', triage2:'t-triage2', nurseLeader:'t-nurseleader', bandar:'t-bandar' };
-      const el = document.getElementById(map2[k]);
-      if (el && t[k]) el.value = t[k];
-    });
+  if (name === 'manage') renderManageView();
+  if (name === 'dashboard') renderDashboard();
+  closeSidebar();
+}
+
+// ========== SIDEBAR ==========
+function renderSidebar() {
+  const list = document.getElementById('deptList');
+  const depts = Object.values(state.departments);
+  list.innerHTML = depts.length === 0
+    ? '<div class="text-muted" style="padding:8px 12px;font-size:12px;">لا توجد تخصصات</div>'
+    : depts.map(d => `
+      <button class="sidebar-item sidebar-dept-item" data-id="${d.id}" onclick="showView('dept','${d.id}')">
+        <span class="item-icon">${d.icon}</span>
+        <span>${d.nameAr}</span>
+        <span class="item-count">${((d.consultants||[]).length + (d.specialists||[]).length + (d.residents||[]).length)}</span>
+      </button>
+    `).join('');
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+// ========== DASHBOARD ==========
+function renderDashboard() {
+  const depts = Object.values(state.departments);
+  const container = document.getElementById('dashboardCards');
+  const empty = document.getElementById('dashboardEmpty');
+  if (depts.length === 0) {
+    container.innerHTML = '';
+    empty.style.display = 'block';
+    return;
   }
-  updateStats();
+  empty.style.display = 'none';
+  const key = getTodayKey();
+  container.innerHTML = depts.map(d => {
+    const entry = (d.schedule||{})[key];
+    const r1 = entry?.r1 || '—';
+    const r2 = entry?.r2 || '—';
+    const con = entry?.consultant || '—';
+    return `
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:12px;cursor:pointer;transition:border .2s;" 
+           onclick="showView('dept','${d.id}')" 
+           onmouseover="this.style.borderColor='var(--border2)'" 
+           onmouseout="this.style.borderColor='var(--border)'">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <span style="font-size:22px;">${d.icon}</span>
+          <div>
+            <div style="font-size:15px;font-weight:700;">${d.nameAr}</div>
+            <div style="font-size:11px;color:var(--text3);">${d.nameEn}</div>
+          </div>
+        </div>
+        ${d.id === 'dept_im' ? (() => {
+          const imE = IM_SCHED[key];
+          if (!imE) return '<div style="font-size:12px;color:var(--text3);padding:6px 0;">لا توجد بيانات اليوم</div>';
+          const ak = getCurrentShift();
+          const cfg = SHIFT_CONFIG[ak];
+          const names = imE[ak] || [];
+          return `<div style="background:${cfg.bg};border:1px solid ${cfg.border};border-radius:10px;padding:10px 12px;">
+            <div style="font-size:10px;font-weight:800;color:${cfg.color};margin-bottom:6px;">${cfg.icon} ${cfg.label} — الآن</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text);">${names.join(' · ')}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px;">استشاري: <span style="color:var(--text2)">${imE.consultant}</span></div>
+          </div>`;
+        })() : `<div class="oncall-grid" style="grid-template-columns:repeat(3,1fr);">
+          <div class="oncall-slot r1">
+            <div class="slot-label">مناوب أول</div>
+            <div class="slot-name ${!entry?.r1?'empty-slot':''}">${r1}</div>
+            ${entry?.r1 ? '<div class="slot-phone">' + (getPhone(d.id,entry.r1)||'') + '</div>' : ''}
+          </div>
+          <div class="oncall-slot r2">
+            <div class="slot-label">مناوب ثاني</div>
+            <div class="slot-name ${!entry?.r2?'empty-slot':''}">${r2}</div>
+            ${entry?.r2 ? '<div class="slot-phone">' + (getPhone(d.id,entry.r2)||'') + '</div>' : ''}
+          </div>
+          <div class="oncall-slot con">
+            <div class="slot-label">استشاري</div>
+            <div class="slot-name ${!entry?.consultant?'empty-slot':''}">${con}</div>
+            ${entry?.consultant ? '<div class="slot-phone">' + (getPhone(d.id,entry.consultant)||'') + '</div>' : ''}
+          </div>
+        </div>`}
+      </div>`;
+  }).join('');
 }
 
-// Auto-save every 2 min if dirty
-setInterval(() => {
-  if (dirty && getUrl()) saveToSheet();
-}, 120000);
-
-// ─── KSA TIME & ELAPSED ───
-function getKSATime() {
-  return new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Riyadh' }));
+// ========== DEPT VIEW ==========
+function renderDeptView(deptId) {
+  const dept = state.departments[deptId];
+  if (!dept) return;
+  document.getElementById('deptIconBig').textContent = dept.icon;
+  document.getElementById('deptNameTitle').textContent = dept.nameAr;
+  document.getElementById('deptSubTitle').textContent = dept.nameEn;
+  renderDeptTab(state.currentDeptTab || 'oncall');
 }
 
-function parseTimeFile(val) {
-  if (!val) return null;
-  val = val.toString().trim().replace(':', '');
-  if (val.length < 3) return null;
-  val = val.padStart(4, '0');
-  const h = parseInt(val.substring(0, 2));
-  const m = parseInt(val.substring(2, 4));
-  if (isNaN(h) || isNaN(m) || h > 23 || m > 59) return null;
-  const now = getKSATime();
-  const t = new Date(now);
-  t.setHours(h, m, 0, 0);
-  // If time is in the future, assume it was yesterday
-  if (t > now) t.setDate(t.getDate() - 1);
-  return t;
+function switchDeptTab(tab) {
+  state.currentDeptTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  renderDeptTab(tab);
 }
 
-function updateElapsed() {
-  const now = getKSATime();
+function renderDeptTab(tab) {
+  const dept = state.departments[state.currentDept];
+  if (!dept) return;
+  const container = document.getElementById('deptTabContent');
 
-  // Update clock
-  document.getElementById('ksa-clock').textContent =
-    '🕐 KSA TIME: ' + now.toTimeString().substring(0,8);
+  if (tab === 'oncall') {
+    const key = getTodayKey();
 
-  INITIAL_BEDS.forEach(b => {
-    const timeFileEl = document.getElementById(`bed-${b.id}-timeFile`);
-    const elapsedEl  = document.getElementById(`bed-${b.id}-elapsed`);
-    const card       = document.getElementById(`bed-${b.id}`);
-    const statusSel  = card?.querySelector('.bed-status-select');
-    if (!timeFileEl || !elapsedEl || !card) return;
-
-    // Skip available beds
-    const status = statusSel?.value;
-    if (status === 'available') {
-      elapsedEl.textContent = 'AVAILABLE';
-      elapsedEl.className = 'elapsed green';
-      return;
-    }
-
-    const fileTime = parseTimeFile(timeFileEl.value);
-    if (!fileTime) {
-      elapsedEl.textContent = '--:--';
-      elapsedEl.className = 'elapsed';
-      return;
-    }
-
-    const diffMs  = now - fileTime;
-    const diffMin = Math.floor(diffMs / 60000);
-    const hours   = Math.floor(diffMin / 60);
-    const mins    = diffMin % 60;
-    const label   = `${String(hours).padStart(2,'0')}:${String(mins).padStart(2,'0')} hr`;
-
-    elapsedEl.textContent = label;
-
-    // Auto color based on elapsed time (only if not manually set to observation)
-    if (status !== 'observation') {
-      // Remove old status classes
-      Object.values(STATUS_MAP).forEach(v => card.classList.remove(v.class));
-      let newStatus;
-      if (diffMin < 120) {
-        newStatus = 'within2hr';
-        elapsedEl.className = 'elapsed green';
-      } else if (diffMin < 240) {
-        newStatus = 'over2hr';
-        elapsedEl.className = 'elapsed yellow';
-      } else {
-        newStatus = 'over4hr';
-        elapsedEl.className = 'elapsed red';
+    // ── IM multi-shift view ──
+    if (state.currentDept === 'dept_im') {
+      const imEntry = IM_SCHED[key];
+      if (!imEntry) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><h3>لا توجد بيانات اليوم (${key})</h3><p>ارفع ملف الجدول أو أضف يدوياً</p><button class="btn btn-primary" style="margin-top:16px;" onclick="openAddScheduleEntry()">＋ إضافة</button></div>`;
+        return;
       }
-      card.classList.add(STATUS_MAP[newStatus].class);
-      if (statusSel) statusSel.value = newStatus;
+      const activeShift = getCurrentShift();
+      const sc = SHIFT_CONFIG[activeShift];
+      let html = `<div class="active-shift-now" style="background:${sc.bg};border:1px solid ${sc.border};">
+        <div class="active-shift-dot" style="background:${sc.color};"></div>
+        <span style="font-weight:800;color:${sc.color};">${sc.label} — الآن</span>
+        <span style="font-size:11px;color:var(--text3);margin-right:auto;direction:ltr;">${sc.time}</span>
+      </div>`;
+      html += `<div style="margin-bottom:12px;"><span class="badge badge-blue">📅 ${key}</span></div>`;
+      ['erDay','erEvening','erNight'].forEach(sk => {
+        const cfg = SHIFT_CONFIG[sk];
+        const isActive = sk === activeShift;
+        const names = imEntry[sk] || [];
+        html += `<div class="shift-section-block ${isActive?'active-shift':''}" style="${isActive?'--shift-color:'+cfg.color:''}">
+          <div class="shift-section-head" style="${isActive?'background:'+cfg.bg:''}">
+            <span>${cfg.icon}</span>
+            <span style="color:${cfg.color};">${cfg.label}</span>
+            ${isActive?`<span class="shift-now-badge" style="background:${cfg.color};color:#000;">الآن</span>`:''}
+            <span class="shift-time-label">${cfg.time}</span>
+          </div>
+          <div class="shift-people-list">
+            ${names.map(name => {
+              const phone = getPhone(state.currentDept, name);
+              return `<div class="shift-person-row">
+                <div class="shift-pa" style="background:${cfg.bg};">👨‍⚕️</div>
+                <div class="shift-pi"><div class="shift-pname">${name}</div><div class="shift-prole">رزيدنت طوارئ</div></div>
+                ${phone ? `<a href="tel:${phone}" class="ct-phone" style="font-size:12px;">📞 ${phone}</a>` : ''}
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+      });
+      // Consultant
+      const conPhone = getPhone(state.currentDept, imEntry.consultant);
+      html += `<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px;display:flex;align-items:center;gap:8px;">الاستشاري المناوب <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
+        <div class="ct-row">
+          <div class="ct-avatar" style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.2);">🩺</div>
+          <div class="ct-info"><div class="ct-name">${imEntry.consultant}</div><div class="ct-role">استشاري باطنية · 8AM–8AM</div></div>
+          ${conPhone ? `<a href="tel:${conPhone}" class="ct-phone">📞 ${conPhone}</a>` : '<span class="text-muted">لا يوجد رقم</span>'}
+        </div>`;
+      container.innerHTML = html;
+      return;
+    }
+
+    // ── Simple (all other depts) ──
+    const entry = (dept.schedule||{})[key];
+    if (!entry) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📅</div>
+          <h3>لا توجد مناوبة مسجلة اليوم (${key})</h3>
+          <p>ارفع ملف الجدول أو أضف يدوياً</p>
+          <button class="btn btn-primary" style="margin-top:16px;" onclick="openAddScheduleEntry()">＋ إضافة مناوبة اليوم</button>
+        </div>`;
+      return;
+    }
+    const slots = [
+      {label:'المناوب الأول', name: entry.r1, cls:'r1'},
+      {label:'المناوب الثاني', name: entry.r2, cls:'r2'},
+      {label:'الاستشاري المناوب', name: entry.consultant, cls:'con'},
+    ];
+    container.innerHTML = `
+      <div style="margin-bottom:12px;"><span class="badge badge-blue">📅 ${key}</span></div>
+      ${slots.map(s => {
+        if (!s.name) return `<div class="ct-row" style="opacity:.4;"><span>${s.label}</span><span class="text-muted">— غير محدد</span></div>`;
+        const phone = getPhone(state.currentDept, s.name);
+        return `
+          <div class="ct-row">
+            <div class="ct-avatar" style="background:var(--card);border:1px solid var(--border);">
+              ${s.cls==='r1'?'🥇':s.cls==='r2'?'🥈':'👨‍⚕️'}
+            </div>
+            <div class="ct-info">
+              <div class="ct-name">${s.name}</div>
+              <div class="ct-role">${s.label}</div>
+            </div>
+            ${phone ? `<a href="tel:${phone}" class="ct-phone">📞 ${phone}</a>` : '<span class="text-muted">لا يوجد رقم</span>'}
+          </div>`;
+      }).join('')}`;
+  }
+
+  if (tab === 'contacts') {
+    const groups = [
+      {key:'consultants', label:'الاستشاريون', icon:'👨‍⚕️', avatarBg:'rgba(59,130,246,.15)'},
+      {key:'specialists', label:'الأخصائيون', icon:'🩺', avatarBg:'rgba(16,185,129,.15)'},
+      {key:'residents', label:'الرزيدنت', icon:'👩‍⚕️', avatarBg:'rgba(245,158,11,.15)'},
+    ];
+    let html = `<div class="row" style="margin-bottom:14px;"><div class="spacer"></div><button class="btn btn-secondary btn-sm" onclick="openAddPerson()">＋ إضافة</button></div>`;
+    groups.forEach(g => {
+      const people = dept[g.key] || [];
+      if (people.length === 0) return;
+      html += `<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;margin-top:16px;">${g.label}</div>`;
+      html += people.map(p => `
+        <div class="ct-row">
+          <div class="ct-avatar" style="background:${g.avatarBg};">${g.icon}</div>
+          <div class="ct-info">
+            <div class="ct-name">${p.name}</div>
+            <div class="ct-role">${g.label}</div>
+          </div>
+          <a href="tel:${p.phone}" class="ct-phone">${p.phone}</a>
+          <div class="ct-actions">
+            <button class="icon-btn" onclick="openEditPerson('${p.id}')">✏️</button>
+            <button class="icon-btn danger" onclick="deletePerson('${p.id}')">🗑️</button>
+          </div>
+        </div>`).join('');
+    });
+    if (!html.includes('ct-row')) html += '<div class="empty-state"><div class="empty-icon">👥</div><h3>لا توجد جهات اتصال</h3><p>أضف الأطباء يدوياً أو ارفع ملف PDF</p></div>';
+    container.innerHTML = html;
+  }
+
+  if (tab === 'schedule') {
+    const schedule = dept.schedule || {};
+    const entries = Object.entries(schedule).sort((a,b) => {
+      const [da,ma] = a[0].split('/').map(Number);
+      const [db,mb] = b[0].split('/').map(Number);
+      return mb !== ma ? mb - ma : db - da;
+    });
+    const todayKey = getTodayKey();
+    let html = `<div class="row" style="margin-bottom:14px;">
+      <div class="spacer"></div>
+      <button class="btn btn-secondary btn-sm" onclick="openAddScheduleEntry()">＋ إضافة يوم</button>
+    </div>`;
+    if (entries.length === 0) {
+      html += '<div class="empty-state"><div class="empty-icon">📅</div><h3>لا يوجد جدول</h3><p>ارفع ملف PDF أو أضف يدوياً</p></div>';
     } else {
-      elapsedEl.className = 'elapsed';
+      html += `<table class="schedule-table">
+        <thead><tr>
+          <th>التاريخ</th><th>المناوب الأول</th><th>المناوب الثاني</th><th>الاستشاري</th><th></th>
+        </tr></thead><tbody>`;
+      html += entries.map(([key, entry]) => `
+        <tr>
+          <td><span class="sched-day">${key}</span>${key===todayKey?' <span class="badge badge-green" style="font-size:10px;">اليوم</span>':''}</td>
+          <td><span class="sched-name r1c">${entry.r1||'—'}</span></td>
+          <td><span class="sched-name r2c">${entry.r2||'—'}</span></td>
+          <td><span class="sched-name conc">${entry.consultant||'—'}</span></td>
+          <td><button class="icon-btn danger" onclick="deleteScheduleEntry('${key}')">🗑️</button></td>
+        </tr>`).join('');
+      html += '</tbody></table>';
+    }
+    container.innerHTML = html;
+  }
+
+  if (tab === 'upload') {
+    container.innerHTML = `
+      <div style="max-width:520px;">
+        <p style="font-size:13px;color:var(--text2);margin-bottom:20px;">ارفع ملف PDF الجدول الشهري وسيقوم النظام باستخراج البيانات تلقائياً</p>
+        <button class="btn btn-cyan" onclick="openUpload()">📎 رفع ملف PDF جديد</button>
+        <div style="margin-top:24px;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:12px;">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px;">📌 ملاحظات</div>
+          <ul style="font-size:12px;color:var(--text2);padding-right:16px;line-height:2;">
+            <li>رفع ملف جديد يضيف البيانات ولا يحذف القديمة</li>
+            <li>يمكنك مراجعة البيانات قبل الحفظ</li>
+            <li>الأسماء والأرقام الموجودة مسبقاً لن تتكرر</li>
+          </ul>
+        </div>
+      </div>`;
+  }
+}
+
+// ========== ADD DEPT ==========
+let selectedIcon = '🏥';
+function openAddDept() {
+  document.getElementById('deptNameAr').value = '';
+  document.getElementById('deptNameEn').value = '';
+  selectedIcon = '🏥';
+  document.querySelectorAll('.icon-pick').forEach(b => b.style.background = '');
+  openModal('modalAddDept');
+}
+document.getElementById('iconPicker').addEventListener('click', e => {
+  const btn = e.target.closest('.icon-pick');
+  if (!btn) return;
+  selectedIcon = btn.dataset.icon;
+  document.getElementById('deptIconSelected').value = selectedIcon;
+  document.querySelectorAll('.icon-pick').forEach(b => b.style.background = '');
+  btn.style.background = 'var(--accent)';
+  btn.style.borderRadius = '8px';
+});
+document.querySelectorAll('.icon-pick').forEach(b => {
+  b.style.cssText = 'font-size:22px;padding:8px;background:none;border:none;cursor:pointer;border-radius:8px;transition:.2s;';
+  b.onmouseover = () => { if(b.dataset.icon !== selectedIcon) b.style.background = 'var(--border)'; };
+  b.onmouseout = () => { if(b.dataset.icon !== selectedIcon) b.style.background = ''; };
+});
+
+function saveDept() {
+  const nameAr = document.getElementById('deptNameAr').value.trim();
+  const nameEn = document.getElementById('deptNameEn').value.trim();
+  if (!nameAr) { toast('أدخل اسم التخصص', 'error'); return; }
+  const id = 'dept_' + Date.now();
+  state.departments[id] = {
+    id, nameAr, nameEn, icon: selectedIcon,
+    consultants: [], specialists: [], residents: [], schedule: {}
+  };
+  save();
+  renderSidebar();
+  closeModal('modalAddDept');
+  toast(`تم إضافة ${nameAr}`, 'success');
+  showView('dept', id);
+}
+
+// ========== ADD/EDIT PERSON ==========
+function openAddPerson() {
+  document.getElementById('addPersonTitle').textContent = 'إضافة شخص';
+  document.getElementById('personName').value = '';
+  document.getElementById('personPhone').value = '';
+  document.getElementById('personRole').value = 'consultant';
+  document.getElementById('editPersonId').value = '';
+  openModal('modalAddPerson');
+}
+
+function openEditPerson(personId) {
+  const dept = state.departments[state.currentDept];
+  const all = [...(dept.consultants||[]), ...(dept.specialists||[]), ...(dept.residents||[])];
+  const p = all.find(x => x.id === personId);
+  if (!p) return;
+  document.getElementById('addPersonTitle').textContent = 'تعديل بيانات';
+  document.getElementById('personName').value = p.name;
+  document.getElementById('personPhone').value = p.phone;
+  document.getElementById('personRole').value = p.role;
+  document.getElementById('editPersonId').value = personId;
+  openModal('modalAddPerson');
+}
+
+function savePerson() {
+  const name = document.getElementById('personName').value.trim();
+  const phone = document.getElementById('personPhone').value.trim();
+  const role = document.getElementById('personRole').value;
+  const editId = document.getElementById('editPersonId').value;
+  if (!name) { toast('أدخل الاسم', 'error'); return; }
+  const dept = state.departments[state.currentDept];
+  const groups = {consultant:'consultants', specialist:'specialists', resident:'residents'};
+
+  if (editId) {
+    // update
+    ['consultants','specialists','residents'].forEach(g => {
+      dept[g] = (dept[g]||[]).filter(p => p.id !== editId);
+    });
+  }
+  dept[groups[role]] = [...(dept[groups[role]]||[]), {id: editId || 'p_'+Date.now(), name, phone, role}];
+  save();
+  closeModal('modalAddPerson');
+  renderDeptTab('contacts');
+  renderSidebar();
+  toast('تم الحفظ', 'success');
+}
+
+function deletePerson(personId) {
+  if (!confirm('حذف هذا الشخص؟')) return;
+  const dept = state.departments[state.currentDept];
+  ['consultants','specialists','residents'].forEach(g => {
+    dept[g] = (dept[g]||[]).filter(p => p.id !== personId);
+  });
+  save();
+  renderDeptTab('contacts');
+  renderSidebar();
+  toast('تم الحذف', 'success');
+}
+
+// ========== SCHEDULE ==========
+function openAddScheduleEntry() {
+  document.getElementById('schedDate').value = getTodayKey();
+  document.getElementById('sched1st').value = '';
+  document.getElementById('sched2nd').value = '';
+  document.getElementById('schedCon').value = '';
+  openModal('modalAddSchedule');
+}
+
+function saveScheduleEntry() {
+  const date = document.getElementById('schedDate').value.trim();
+  const r1 = document.getElementById('sched1st').value.trim();
+  const r2 = document.getElementById('sched2nd').value.trim();
+  const consultant = document.getElementById('schedCon').value.trim();
+  if (!date) { toast('أدخل التاريخ', 'error'); return; }
+  const dept = state.departments[state.currentDept];
+  if (!dept.schedule) dept.schedule = {};
+  dept.schedule[date] = {r1, r2, consultant};
+  save();
+  closeModal('modalAddSchedule');
+  renderDeptTab('schedule');
+  toast('تم الحفظ', 'success');
+}
+
+function deleteScheduleEntry(key) {
+  const dept = state.departments[state.currentDept];
+  delete dept.schedule[key];
+  save();
+  renderDeptTab('schedule');
+  toast('تم الحذف', 'success');
+}
+
+// ========== UPLOAD / AI EXTRACTION ==========
+let pendingFile = null;
+
+function openUpload() {
+  resetUpload();
+  openModal('modalUpload');
+}
+
+function resetUpload() {
+  document.getElementById('uploadStep1').style.display = 'block';
+  document.getElementById('uploadStep2').style.display = 'none';
+  document.getElementById('uploadStep3').style.display = 'none';
+  document.getElementById('pdfInput').value = '';
+  state.pendingExtraction = null;
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.add('drag');
+}
+function handleDragLeave(e) {
+  document.getElementById('uploadZone').classList.remove('drag');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type === 'application/pdf') processFile(file);
+  else toast('الرجاء رفع ملف PDF فقط', 'error');
+}
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+
+async function processFile(file) {
+  pendingFile = file;
+  document.getElementById('uploadStep1').style.display = 'none';
+  document.getElementById('uploadStep2').style.display = 'block';
+  document.getElementById('extractLoading').style.display = 'flex';
+  document.getElementById('extractResult').style.display = 'none';
+
+  try {
+    const base64 = await fileToBase64(file);
+    const extracted = await extractWithClaude(base64);
+    state.pendingExtraction = extracted;
+    showExtractionResult(extracted);
+  } catch(err) {
+    document.getElementById('extractLoading').style.display = 'none';
+    document.getElementById('extractResult').style.display = 'block';
+    document.getElementById('extractResult').innerHTML = `
+      <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:14px;color:#fca5a5;font-size:13px;">
+        ❌ فشل الاستخراج التلقائي: ${err.message}<br><br>
+        <button class="btn btn-secondary btn-sm" onclick="resetUpload()">العودة</button>
+      </div>`;
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = () => rej(new Error('فشل قراءة الملف'));
+    r.readAsDataURL(file);
+  });
+}
+
+async function extractWithClaude(base64) {
+  const prompt = `You are a medical scheduling data extractor. Analyze this PDF and extract:
+
+1. CONTACTS: All doctors with names, phone numbers, and roles (consultant/specialist/resident)
+2. SCHEDULE: On-call schedule entries with date (D/M format), 1st on-call, 2nd on-call, consultant
+
+Return ONLY valid JSON in this exact format:
+{
+  "contacts": [
+    {"name": "Dr. Name", "phone": "05XXXXXXXX", "role": "consultant|specialist|resident"}
+  ],
+  "schedule": [
+    {"date": "1/2", "r1": "NAME", "r2": "NAME", "consultant": "NAME"}
+  ]
+}
+
+Rules:
+- role must be exactly: consultant, specialist, or resident  
+- date format: day/month (e.g. "26/2")
+- phone: Saudi format starting with 05
+- If no 2nd on-call for a date, set r2 to empty string ""
+- Extract ALL dates from the schedule tables`;
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 4000,
+      messages: [{
+        role: "user",
+        content: [
+          { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } },
+          { type: "text", text: prompt }
+        ]
+      }]
+    })
+  });
+
+  if (!response.ok) throw new Error(`API Error: ${response.status}`);
+  const data = await response.json();
+  const text = data.content.map(c => c.text || '').join('');
+  const clean = text.replace(/```json|```/g, '').trim();
+  const jsonMatch = clean.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('لم يتم العثور على بيانات قابلة للاستخراج');
+  return JSON.parse(jsonMatch[0]);
+}
+
+function showExtractionResult(data) {
+  document.getElementById('extractLoading').style.display = 'none';
+  document.getElementById('uploadStep2').style.display = 'none';
+  document.getElementById('uploadStep3').style.display = 'block';
+
+  const contacts = data.contacts || [];
+  const schedule = data.schedule || [];
+  document.getElementById('extractSummary').innerHTML =
+    `تم استخراج ${contacts.length} جهة اتصال و ${schedule.length} يوم في الجدول`;
+
+  const roleLabel = {consultant:'استشاري', specialist:'أخصائي', resident:'رزيدنت'};
+  let html = '';
+
+  if (contacts.length > 0) {
+    html += `<div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:8px;">جهات الاتصال المستخرجة</div>`;
+    html += contacts.slice(0,8).map(c => `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:4px;font-size:13px;">
+        <span style="flex:1;font-weight:600;">${c.name}</span>
+        <span style="color:var(--cyan);direction:ltr;">${c.phone}</span>
+        <span class="badge badge-blue">${roleLabel[c.role]||c.role}</span>
+      </div>`).join('');
+    if (contacts.length > 8) html += `<div class="text-muted" style="text-align:center;padding:6px;">... و ${contacts.length - 8} آخرون</div>`;
+  }
+
+  if (schedule.length > 0) {
+    html += `<div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;margin:14px 0 8px;">جدول المناوبة المستخرج (أول 5)</div>`;
+    html += schedule.slice(0,5).map(s => `
+      <div style="display:flex;gap:8px;padding:7px 12px;background:var(--bg);border-radius:8px;margin-bottom:4px;font-size:12px;">
+        <span style="font-weight:700;color:var(--text2);width:40px;">${s.date}</span>
+        <span style="color:#fca5a5;">${s.r1||'—'}</span>
+        <span style="color:var(--text3);">|</span>
+        <span style="color:#fdba74;">${s.r2||'—'}</span>
+        <span style="color:var(--text3);">|</span>
+        <span style="color:#93c5fd;">${s.consultant||'—'}</span>
+      </div>`).join('');
+  }
+
+  document.getElementById('previewData').innerHTML = html;
+}
+
+function confirmExtraction() {
+  const data = state.pendingExtraction;
+  if (!data || !state.currentDept) return;
+  const dept = state.departments[state.currentDept];
+
+  // merge contacts (no duplicates by name)
+  const existing = [...(dept.consultants||[]), ...(dept.specialists||[]), ...(dept.residents||[])];
+  const existingNames = existing.map(p => p.name.toUpperCase().trim());
+  const groups = {consultant:'consultants', specialist:'specialists', resident:'residents'};
+
+  (data.contacts||[]).forEach(c => {
+    const key = c.name.toUpperCase().trim();
+    if (!existingNames.includes(key)) {
+      const role = ['consultant','specialist','resident'].includes(c.role) ? c.role : 'resident';
+      dept[groups[role]] = [...(dept[groups[role]]||[]), {id:'p_'+Date.now()+'_'+Math.random(), name:c.name, phone:c.phone, role}];
+      existingNames.push(key);
     }
   });
 
-  updateStats();
+  // merge schedule
+  if (!dept.schedule) dept.schedule = {};
+  (data.schedule||[]).forEach(s => {
+    dept.schedule[s.date] = {r1: s.r1||'', r2: s.r2||'', consultant: s.consultant||''};
+  });
+
+  save();
+  closeModal('modalUpload');
+  renderDeptView(state.currentDept);
+  renderSidebar();
+  toast('تم حفظ البيانات بنجاح ✅', 'success');
 }
 
-// Run every second
-setInterval(updateElapsed, 1000);
-updateElapsed();
+// ========== MANAGE ==========
+function renderManageView() {
+  const sel = document.getElementById('clearDeptSelect');
+  sel.innerHTML = Object.values(state.departments).map(d =>
+    `<option value="${d.id}">${d.nameAr}</option>`).join('');
+}
 
-// ─── TOAST ───
-function showToast(msg, isError=false) {
-  const t = document.getElementById('toast');
+function clearDeptData() {
+  const id = document.getElementById('clearDeptSelect').value;
+  if (!id) return;
+  if (!confirm('هل أنت متأكد من حذف كل بيانات هذا التخصص؟')) return;
+  const dept = state.departments[id];
+  dept.consultants = []; dept.specialists = []; dept.residents = []; dept.schedule = {};
+  save();
+  toast('تم مسح البيانات', 'success');
+}
+
+function exportData() {
+  const json = JSON.stringify(state.departments, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `ksh_oncall_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const data = JSON.parse(r.result);
+      state.departments = data;
+      save();
+      renderSidebar();
+      renderDashboard();
+      toast('تم استيراد البيانات', 'success');
+    } catch {
+      toast('ملف غير صالح', 'error');
+    }
+  };
+  r.readAsText(file);
+}
+
+// ========== MODAL HELPERS ==========
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
+});
+
+// ========== TOAST ==========
+function toast(msg, type='info') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
   t.textContent = msg;
-  t.className = 'toast show' + (isError ? ' error' : '');
-  setTimeout(() => t.className = 'toast', 3000);
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
 }
+
+// ========== INIT ==========
+load();
+
+
+// ===== IM MULTI-SHIFT SCHEDULE =====
+const IM_SCHED = {
+  "15/2":{erDay:["Y.Nayef","Hadi"],       erEvening:["Y.Nayef","Abdulrahman T."],erNight:["Rayed","Bedaiwi","Abdulraouf"], consultant:"OMALKHAIR"},
+  "16/2":{erDay:["Y.Nayef","Hadi"],       erEvening:["Lafi","Hamdah"],           erNight:["Enas","Nada","Bedaiwi"],        consultant:"FAISAL"},
+  "17/2":{erDay:["Y.Nayef","Hadi"],       erEvening:["Oqab","Abrar"],            erNight:["Majed","Abdulraouf","Nada"],    consultant:"ZAHRA"},
+  "18/2":{erDay:["Shujaa","Othman"],      erEvening:["Alsahwan","Abdulrahman T."],erNight:["Mohannad","Bedaiwi","Abdulraouf"],consultant:"BADRIYA"},
+  "19/2":{erDay:["Shujaa","Othman"],      erEvening:["Danah","S.Alomary"],       erNight:["Hadeel","Nada","Bedaiwi"],      consultant:"FAISAL"},
+  "20/2":{erDay:["Hadi","Enas"],          erEvening:["Y.Nayef","Abdulraouf"],    erNight:["Nada","Bedaiwi","Shafiq"],      consultant:"NEZAR"},
+  "21/2":{erDay:["Othman","A.Alharbi"],   erEvening:["Lafi","Bedaiwi"],          erNight:["Abdulraouf","Nada","Hussain"],  consultant:"ZAHRA"},
+  "22/2":{erDay:["Shujaa","Othman"],      erEvening:["Alsahwan","Oqab"],         erNight:["Rayed","Rayyan","Alqurashi"],   consultant:"AFIFI"},
+  "23/2":{erDay:["A.Alharbi","Lafi"],     erEvening:["Shujaa","Majed"],          erNight:["Alluhaidan","Hajri","Rayyan"],  consultant:"BADRIYA"},
+  "24/2":{erDay:["A.Alharbi","Lafi"],     erEvening:["Abdulrahman T.","Y.Nayef"],erNight:["Abrar","Alqurashi","Hajri"],    consultant:"FAISAL"},
+  "25/2":{erDay:["A.Alharbi","Majed"],    erEvening:["Hamdah","Mohannad"],       erNight:["Othman","Rayyan","Alqurashi"],  consultant:"HAZIM"},
+  "26/2":{erDay:["Alluhaidan","Majed"],   erEvening:["Enas","Lafi"],             erNight:["A.Alharbi","Hajri","Rayyan"],   consultant:"BADRIYA"},
+  "27/2":{erDay:["Hadeel","Moath Y."],    erEvening:["Oqab","Alqurashi"],        erNight:["Hajri","Rayyan","Ayat"],        consultant:"ZAHRA"},
+  "28/2":{erDay:["S.Alomary","Hadi"],     erEvening:["Abdulrahman T.","Rayyan"], erNight:["Alqurashi","Hajri","Muaaz"],    consultant:"HAZIM"},
+  "1/3": {erDay:["S.Alomary","Majed"],    erEvening:["Shujaa","Othman"],         erNight:["Hamdah","Nada","Bedaiwi"],      consultant:"M.ALYOUSEF"},
+  "2/3": {erDay:["S.Alomary","Abdulrahman T."],erEvening:["Rayed","Alsahwan"],   erNight:["Majed","Abdulraouf","Nada"],    consultant:"FAISAL"},
+  "3/3": {erDay:["Alluhaidan","Rayed"],   erEvening:["Abdulrahman T.","S.Alomary"],erNight:["Suha","Bedaiwi","Abdulraouf"],consultant:"AFIFI"},
+  "4/3": {erDay:["Hamdah","Abdulrahman T."],erEvening:["Shujaa","Oqab"],         erNight:["Othman","Nada","Bedaiwi"],      consultant:"NEZAR"},
+  "5/3": {erDay:["Hamdah","Abdulrahman T."],erEvening:["Alluhaidan","Hadi"],      erNight:["Moath Y.","Abdulraouf","Nada"],consultant:"HAZIM"},
+  "6/3": {erDay:["Mohannad","Danah"],     erEvening:["Alsahwan","Hadeel"],       erNight:["Bedaiwi","Abdulraouf","Nada"],  consultant:"M.ALYOUSEF"},
+  "7/3": {erDay:["Hamdah","A.Alharbi"],   erEvening:["Hadeel","S.Alomary"],      erNight:["Hamdah","Nada","Bedaiwi"],      consultant:"AFIFI"},
+  "8/3": {erDay:["S.Alomary","Rayed"],    erEvening:["Majed","Shujaa"],          erNight:["Y.Nayef","Hajri","Rayyan"],     consultant:"M.ALYOUSEF"},
+  "9/3": {erDay:["Hamdah","Rayed"],       erEvening:["Oqab","Alsahwan"],         erNight:["Hadi","Alqurashi","Hajri"],     consultant:"HAZIM"},
+  "10/3":{erDay:["Alsahwan","Oqab"],      erEvening:["Othman","Rayed"],          erNight:["A.Alharbi","Rayyan","Alqurashi"],consultant:"NEZAR"},
+  "11/3":{erDay:["Alsahwan","Oqab"],      erEvening:["Y.Nayef","Hamdah"],        erNight:["Suha","Hajri","Rayyan"],        consultant:"M.ALYOUSEF"},
+  "12/3":{erDay:["Alsahwan","Oqab"],      erEvening:["Mohannad","Moath Y."],     erNight:["Danah","Alqurashi","Hajri"],    consultant:"AFIFI"},
+  "13/3":{erDay:["Alluhaidan","S.Alomary"],erEvening:["Shujaa","Rayyan"],        erNight:["Alqurashi","Hajri","Hussain"],  consultant:"ZAHRA"},
+  "14/3":{erDay:["Majed","Rayed"],        erEvening:["Talal","Hajri"],           erNight:["Rayyan","Alqurashi","Alsanie"], consultant:"NEZAR"},
+};
+
+function getSAHour() {
+  return new Date(new Date().getTime() + 3*3600*1000).getUTCHours();
+}
+function getCurrentShift() {
+  const h = getSAHour();
+  if (h >= 8 && h < 15) return 'erDay';
+  if (h >= 15 && h < 22) return 'erEvening';
+  return 'erNight';
+}
+const SHIFT_CONFIG = {
+  erDay:     {label:'الشفت الصباحي', time:'8:00AM – 3:30PM', icon:'☀️', color:'#fbbf24', bg:'rgba(251,191,36,.12)', border:'rgba(251,191,36,.3)'},
+  erEvening: {label:'الشفت المسائي', time:'3:30PM – 10:00PM', icon:'🌆', color:'#f97316', bg:'rgba(249,115,22,.12)', border:'rgba(249,115,22,.3)'},
+  erNight:   {label:'الشفت الليلي', time:'10:00PM – 8:00AM', icon:'🌙', color:'#818cf8', bg:'rgba(129,140,248,.12)', border:'rgba(129,140,248,.3)'},
+};
+
+// ===== PRELOADED DEPARTMENT DATA =====
+const PRELOADED_DEPTS = {
+  dept_optha: {
+    id:'dept_optha', nameAr:'طب العيون', nameEn:'Ophthalmology', icon:'👁️',
+    consultants:[
+      {id:'p1',name:'Dr. Omran',phone:'0504434627',role:'consultant'},
+      {id:'p2',name:'Dr. ALENAZI',phone:'0554245264',role:'consultant'},
+      {id:'p3',name:'Dr. Nawaf',phone:'0504143689',role:'consultant'},
+      {id:'p4',name:'Dr. ALJasser',phone:'0541000720',role:'consultant'},
+      {id:'p5',name:'Dr. Hassan',phone:'0505118150',role:'consultant'},
+      {id:'p6',name:'SHAMMARI',phone:'0546632221',role:'consultant'},
+    ],
+    specialists:[
+      {id:'p7',name:'AHMED',phone:'0530298975',role:'specialist'},
+      {id:'p8',name:'MUHAMMED',phone:'0537235268',role:'specialist'},
+    ],
+    residents:[
+      {id:'p9',name:'Dr. Ashjan',phone:'0555171129',role:'resident'},
+      {id:'p10',name:'Dr. Nasser',phone:'0555230430',role:'resident'},
+      {id:'p11',name:'Dr. Abduellah',phone:'0599484080',role:'resident'},
+      {id:'p12',name:'NAIF',phone:'0504228951',role:'resident'},
+      {id:'p13',name:'Dr. Osman',phone:'0502759303',role:'resident'},
+      {id:'p14',name:'DR. Lamia',phone:'0555656548',role:'resident'},
+      {id:'p15',name:'ASMA',phone:'0540815222',role:'resident'},
+    ],
+    schedule:{
+      "1/2":{r1:"ASMA",r2:"AHMED",consultant:"SHAMMARI"},
+      "2/2":{r1:"NAIF",r2:"MOTAZ",consultant:"SHAMMARI"},
+      "3/2":{r1:"ASHJAN",r2:"AHMED",consultant:"SHAMMARI"},
+      "4/2":{r1:"OSMAN",r2:"TAHIR",consultant:"SHAMMARI"},
+      "5/2":{r1:"NASSER",r2:"AMRO",consultant:"HASSAN"},
+      "6/2":{r1:"LAMIA",r2:"TAHIR",consultant:"HASSAN"},
+      "7/2":{r1:"NAIF",r2:"AHMED",consultant:"HASSAN"},
+      "8/2":{r1:"ASMA",r2:"TAHIR",consultant:"HASSAN"},
+      "9/2":{r1:"NAIF",r2:"AHMED",consultant:"HASSAN"},
+      "10/2":{r1:"NASSER",r2:"TAHIR",consultant:"OMRAN"},
+      "11/2":{r1:"LAMIA",r2:"",consultant:"OMRAN"},
+      "12/2":{r1:"OSMAN",r2:"AHMED",consultant:"OMRAN"},
+      "13/2":{r1:"ASHJAN",r2:"",consultant:"OMRAN"},
+      "14/2":{r1:"NASSER",r2:"AHMED",consultant:"OMRAN"},
+      "15/2":{r1:"ASMA",r2:"",consultant:"ALJASSER"},
+      "16/2":{r1:"NAIF",r2:"AHMED",consultant:"ALJASSER"},
+      "17/2":{r1:"ASHJAN",r2:"TAHIR",consultant:"ALJASSER"},
+      "18/2":{r1:"LAMIA",r2:"AHMED",consultant:"ALJASSER"},
+      "19/2":{r1:"NASSER",r2:"TAHIR",consultant:"ALJASSER"},
+      "20/2":{r1:"OSMAN",r2:"",consultant:"NAWAF"},
+      "21/2":{r1:"ASMA",r2:"",consultant:"NAWAF"},
+      "22/2":{r1:"LAMIA",r2:"",consultant:"NAWAF"},
+      "23/2":{r1:"ASHJAN",r2:"TAHIR",consultant:"NAWAF"},
+      "24/2":{r1:"OSMAN",r2:"TAHIR",consultant:"NAWAF"},
+      "25/2":{r1:"NAIF",r2:"",consultant:"NAWAF"},
+      "26/2":{r1:"LAMIA",r2:"TAHIR",consultant:"NAWAF"},
+      "27/2":{r1:"ASMA",r2:"",consultant:"NAWAF"},
+      "28/2":{r1:"NASSER",r2:"TAHIR",consultant:"ENAZI"},
+    }
+  },
+  dept_ortho: {
+    id:'dept_ortho', nameAr:'العظام والمفاصل', nameEn:'Orthopedic', icon:'🦴',
+    consultants:[
+      {id:'oc1',name:'Dr. Aloteibi',phone:'0504662265',role:'consultant'},
+      {id:'oc2',name:'Dr. Abdelelah',phone:'0558700202',role:'consultant'},
+      {id:'oc3',name:'Dr. Altigani',phone:'0509234448',role:'consultant'},
+      {id:'oc4',name:'Dr. Amgad',phone:'0553214587',role:'consultant'},
+      {id:'oc5',name:'Dr. Altayeb',phone:'0550153193',role:'consultant'},
+    ],
+    specialists:[
+      {id:'os1',name:'Dr. Hattab',phone:'0540378163',role:'specialist'},
+      {id:'os2',name:'Dr. Waleed',phone:'0569046197',role:'specialist'},
+      {id:'os3',name:'Dr. Alaa',phone:'0533457448',role:'specialist'},
+      {id:'os4',name:'Dr. Sulaiman',phone:'0505105018',role:'specialist'},
+      {id:'os5',name:'Dr. Abdulrahman',phone:'0561622294',role:'specialist'},
+      {id:'os6',name:'Dr. Amin',phone:'0506094292',role:'specialist'},
+      {id:'os7',name:'Dr. Eman',phone:'0544010888',role:'specialist'},
+    ],
+    residents:[
+      {id:'or1',name:'Dr. Albaz',phone:'0552154845',role:'resident'},
+      {id:'or2',name:'Dr. Omar',phone:'0533944952',role:'resident'},
+      {id:'or3',name:'Dr. Azzam',phone:'0551155653',role:'resident'},
+      {id:'or4',name:'Dr. Eithan',phone:'0540636489',role:'resident'},
+      {id:'or5',name:'Dr. Alruwaily',phone:'0504955442',role:'resident'},
+      {id:'or6',name:'Dr. Tariq',phone:'0507121121',role:'resident'},
+      {id:'or7',name:'Dr. Wael',phone:'0555066635',role:'resident'},
+      {id:'or8',name:'Dr. Khalid',phone:'0554409951',role:'resident'},
+    ],
+    schedule:{
+      "18/2":{r1:"ABDULRAHMAN",r2:"TARIQ",consultant:"Aloteibi"},
+      "19/2":{r1:"AMIN",r2:"RUWAILY",consultant:"Aloteibi"},
+      "20/2":{r1:"HATTAB",r2:"EITHAN",consultant:"Aloteibi"},
+      "21/2":{r1:"AMIN",r2:"KHALID",consultant:"Aloteibi"},
+      "22/2":{r1:"EMAN",r2:"TARIQ",consultant:"Aloteibi"},
+      "23/2":{r1:"ALAA",r2:"OMAR",consultant:"Abdelelah"},
+      "24/2":{r1:"ABDULRAHMAN",r2:"AZZAM",consultant:"Abdelelah"},
+      "25/2":{r1:"HATTAB",r2:"TARIQ",consultant:"Abdelelah"},
+      "26/2":{r1:"WALEED",r2:"WAEL",consultant:"Abdelelah"},
+      "27/2":{r1:"ALAA",r2:"KHALID",consultant:"Abdelelah"},
+      "28/2":{r1:"WALEED",r2:"OMAR",consultant:"Abdelelah"},
+      "1/3":{r1:"EMAN",r2:"AZZAM",consultant:"Amgad"},
+      "2/3":{r1:"HATTAB",r2:"OMAR",consultant:"Amgad"},
+      "3/3":{r1:"AMIN",r2:"RUWAILY",consultant:"Amgad"},
+      "4/3":{r1:"WALEED",r2:"TARIQ",consultant:"Amgad"},
+      "5/3":{r1:"ABDULRAHMAN",r2:"RUWAILY",consultant:"Amgad"},
+      "6/3":{r1:"SULAIMAN",r2:"WAEL",consultant:"Amgad"},
+      "7/3":{r1:"ABDULRAHMAN",r2:"EITHAN",consultant:"Amgad"},
+      "8/3":{r1:"AMIN",r2:"OMAR",consultant:"Altigani"},
+      "9/3":{r1:"WALEED",r2:"KHALID",consultant:"Altigani"},
+      "10/3":{r1:"SULAIMAN",r2:"ALBAZ",consultant:"Altigani"},
+      "11/3":{r1:"EMAN",r2:"KHALID",consultant:"Altigani"},
+      "12/3":{r1:"ALAA",r2:"TARIQ",consultant:"Altigani"},
+      "13/3":{r1:"SULAIMAN",r2:"AZZAM",consultant:"Altigani"},
+      "14/3":{r1:"ALAA",r2:"OMAR",consultant:"Altigani"},
+    }
+  },
+  dept_im: {
+    id:'dept_im', nameAr:'الباطنية', nameEn:'Internal Medicine', icon:'🩺',
+    consultants:[
+      {id:'imc1',name:'M. Alanazi',phone:'0555531428',role:'consultant'},
+      {id:'imc2',name:'BADRIYA',phone:'0505281699',role:'consultant'},
+      {id:'imc3',name:'NEZAR',phone:'0555629006',role:'consultant'},
+      {id:'imc4',name:'FAISAL',phone:'0558105515',role:'consultant'},
+      {id:'imc5',name:'M. ALYOUSEF',phone:'0557775638',role:'consultant'},
+      {id:'imc6',name:'ZAHRA',phone:'0507099090',role:'consultant'},
+      {id:'imc7',name:'OMALKHAIR',phone:'0539180860',role:'consultant'},
+      {id:'imc8',name:'AFIFI',phone:'0502745102',role:'consultant'},
+      {id:'imc9',name:'HAZIM',phone:'0540664060',role:'consultant'},
+    ],
+    specialists:[
+      {id:'ims1',name:'SHAFIQ',phone:'0509773287',role:'specialist'},
+      {id:'ims2',name:'ALSANIE',phone:'0570618739',role:'specialist'},
+      {id:'ims3',name:'HUSSAIN',phone:'0501266214',role:'specialist'},
+      {id:'ims4',name:'MOTAZ',phone:'0555748611',role:'specialist'},
+      {id:'ims5',name:'BANDER',phone:'0504898563',role:'specialist'},
+      {id:'ims6',name:'AYAT',phone:'0555849458',role:'specialist'},
+      {id:'ims7',name:'SAUD',phone:'0564480323',role:'specialist'},
+      {id:'ims8',name:'ANMAR',phone:'0503546643',role:'specialist'},
+      {id:'ims9',name:'MUAAZ',phone:'0598100291',role:'specialist'},
+      {id:'ims10',name:'ASEEL',phone:'0598100291',role:'specialist'},
+      {id:'ims11',name:'ATHEER',phone:'0543841232',role:'specialist'},
+    ],
+    residents:[
+      {id:'imr1',name:'Y.Nayef',phone:'0560942607',role:'resident'},
+      {id:'imr2',name:'Bedaiwi',phone:'0555336260',role:'resident'},
+      {id:'imr3',name:'Nada',phone:'0553745644',role:'resident'},
+      {id:'imr4',name:'Hajri',phone:'0534633220',role:'resident'},
+      {id:'imr5',name:'Hamdah',phone:'0531059331',role:'resident'},
+      {id:'imr6',name:'Alsahwan',phone:'0531263367',role:'resident'},
+      {id:'imr7',name:'Oqab',phone:'0554236762',role:'resident'},
+      {id:'imr8',name:'Moath Y.',phone:'0554133372',role:'resident'},
+      {id:'imr9',name:'Lafi',phone:'0536396096',role:'resident'},
+      {id:'imr10',name:'Alluhaidan',phone:'0555258077',role:'resident'},
+      {id:'imr11',name:'Majed',phone:'0551126972',role:'resident'},
+      {id:'imr12',name:'S.Alomary',phone:'0541106205',role:'resident'},
+      {id:'imr13',name:'Rayed',phone:'0540402437',role:'resident'},
+      {id:'imr14',name:'Othman',phone:'0590355755',role:'resident'},
+      {id:'imr15',name:'Abrar',phone:'0555422130',role:'resident'},
+      {id:'imr16',name:'Talal',phone:'0566664079',role:'resident'},
+      {id:'imr17',name:'Suha',phone:'0534126723',role:'resident'},
+      {id:'imr18',name:'Abdulraouf',phone:'0595725761',role:'resident'},
+      {id:'imr19',name:'Abdulrahman T.',phone:'0501832164',role:'resident'},
+      {id:'imr20',name:'Alqurashi',phone:'0573700488',role:'resident'},
+      {id:'imr21',name:'Enas',phone:'0590569295',role:'resident'},
+      {id:'imr22',name:'Mohannad',phone:'0501998182',role:'resident'},
+      {id:'imr23',name:'Danah',phone:'0557972109',role:'resident'},
+      {id:'imr24',name:'Hadeel',phone:'0573700488',role:'resident'},
+      {id:'imr25',name:'Hadi',phone:'0540664060',role:'resident'},
+      {id:'imr26',name:'Rayyan',phone:'0533300498',role:'resident'},
+      {id:'imr27',name:'A.Alharbi',phone:'0508557350',role:'resident'},
+      {id:'imr28',name:'Shujaa',phone:'0553342821',role:'resident'},
+      {id:'imr29',name:'Othman',phone:'0590355755',role:'resident'},
+    ],
+    schedule:{
+      "15/2":{r1:"Y.Nayef",r2:"Hadi",consultant:"OMALKHAIR"},
+      "16/2":{r1:"Y.Nayef",r2:"Hadi",consultant:"FAISAL"},
+      "17/2":{r1:"Y.Nayef",r2:"Hadi",consultant:"ZAHRA"},
+      "18/2":{r1:"Shujaa",r2:"Othman",consultant:"BADRIYA"},
+      "19/2":{r1:"Shujaa",r2:"Othman",consultant:"FAISAL"},
+      "20/2":{r1:"Hadi",r2:"Enas",consultant:"NEZAR"},
+      "21/2":{r1:"Othman",r2:"A.Alharbi",consultant:"ZAHRA"},
+      "22/2":{r1:"Shujaa",r2:"Othman",consultant:"AFIFI"},
+      "23/2":{r1:"A.Alharbi",r2:"Lafi",consultant:"BADRIYA"},
+      "24/2":{r1:"A.Alharbi",r2:"Lafi",consultant:"FAISAL"},
+      "25/2":{r1:"A.Alharbi",r2:"Majed",consultant:"HAZIM"},
+      "26/2":{r1:"Alluhaidan",r2:"Majed",consultant:"BADRIYA"},
+      "27/2":{r1:"Hadeel",r2:"Moath Y.",consultant:"ZAHRA"},
+      "28/2":{r1:"S.Alomary",r2:"Hadi",consultant:"HAZIM"},
+      "1/3":{r1:"S.Alomary",r2:"Majed",consultant:"M.ALYOUSEF"},
+      "2/3":{r1:"S.Alomary",r2:"Abdulrahman T.",consultant:"FAISAL"},
+      "3/3":{r1:"Alluhaidan",r2:"Rayed",consultant:"AFIFI"},
+      "4/3":{r1:"Hamdah",r2:"Abdulrahman T.",consultant:"NEZAR"},
+      "5/3":{r1:"Hamdah",r2:"Abdulrahman T.",consultant:"HAZIM"},
+      "6/3":{r1:"Mohannad",r2:"Danah",consultant:"M.ALYOUSEF"},
+      "7/3":{r1:"Hamdah",r2:"A.Alharbi",consultant:"AFIFI"},
+      "8/3":{r1:"S.Alomary",r2:"Rayed",consultant:"M.ALYOUSEF"},
+      "9/3":{r1:"Hamdah",r2:"Rayed",consultant:"HAZIM"},
+      "10/3":{r1:"Alsahwan",r2:"Oqab",consultant:"NEZAR"},
+      "11/3":{r1:"Alsahwan",r2:"Oqab",consultant:"M.ALYOUSEF"},
+      "12/3":{r1:"Alsahwan",r2:"Oqab",consultant:"AFIFI"},
+      "13/3":{r1:"Alluhaidan",r2:"S.Alomary",consultant:"ZAHRA"},
+      "14/3":{r1:"Majed",r2:"Rayed",consultant:"NEZAR"},
+    }
+  },
+  dept_gs: {
+    id:'dept_gs', nameAr:'الجراحة العامة', nameEn:'General Surgery', icon:'🔪',
+    consultants:[
+      {id:'gc1',name:'SHANAWANI',phone:'0505815993',role:'consultant'},
+      {id:'gc2',name:'BAHOOTH',phone:'0555412004',role:'consultant'},
+      {id:'gc3',name:'ESRAA',phone:'0563024499',role:'consultant'},
+      {id:'gc4',name:'TASSAN',phone:'0545333357',role:'consultant'},
+      {id:'gc5',name:'SAUD',phone:'0562151717',role:'consultant'},
+      {id:'gc6',name:'MASOUD',phone:'0555410004',role:'consultant'},
+      {id:'gc7',name:'ANGARI',phone:'0545532098',role:'consultant'},
+      {id:'gc8',name:'FAHD',phone:'0500054455',role:'consultant'},
+      {id:'gc9',name:'GHADEER',phone:'0506336561',role:'consultant'},
+      {id:'gc10',name:'YASSER',phone:'0568001305',role:'consultant'},
+      {id:'gc11',name:'MORAYA',phone:'0567399676',role:'consultant'},
+      {id:'gc12',name:'ABDULRASHID',phone:'0557675568',role:'consultant'},
+      {id:'gc13',name:'SHAMMARY',phone:'0555576794',role:'consultant'},
+      {id:'gc14',name:'MALIKI',phone:'0590088509',role:'consultant'},
+    ],
+    specialists:[
+      {id:'gs1',name:'SUROR',phone:'0595022800',role:'specialist'},
+      {id:'gs2',name:'HASAN',phone:'0505866946',role:'specialist'},
+      {id:'gs3',name:'FERAS',phone:'0554531866',role:'specialist'},
+      {id:'gs4',name:'MANAL',phone:'0501286969',role:'specialist'},
+      {id:'gs5',name:'AHMED',phone:'0555078820',role:'specialist'},
+      {id:'gs6',name:'ALAA',phone:'0544091090',role:'specialist'},
+      {id:'gs7',name:'LAYLA',phone:'0557357271',role:'specialist'},
+      {id:'gs8',name:'NAWAF',phone:'0594447782',role:'specialist'},
+      {id:'gs9',name:'JABBAR',phone:'0562545446',role:'specialist'},
+      {id:'gs10',name:'AMANI',phone:'0500396136',role:'specialist'},
+      {id:'gs11',name:'DARWISH',phone:'0566670731',role:'specialist'},
+      {id:'gs12',name:'SAYYED',phone:'0583434888',role:'specialist'},
+    ],
+    residents:[
+      {id:'gr1',name:'ABDULWAHAB',phone:'0560048719',role:'resident'},
+      {id:'gr2',name:'ABDULELAH',phone:'0545868103',role:'resident'},
+      {id:'gr3',name:'BETOL',phone:'0554638777',role:'resident'},
+      {id:'gr4',name:'FARIS',phone:'0555990214',role:'resident'},
+      {id:'gr5',name:'NORAH',phone:'0561192015',role:'resident'},
+      {id:'gr6',name:'ZAINAB',phone:'0580201566',role:'resident'},
+      {id:'gr7',name:'RAGHAD',phone:'0590850599',role:'resident'},
+      {id:'gr8',name:'NADA',phone:'0543314515',role:'resident'},
+      {id:'gr9',name:'NOUF',phone:'0559618991',role:'resident'},
+      {id:'gr10',name:'RUBA',phone:'0508289459',role:'resident'},
+      {id:'gr11',name:'MALIK',phone:'0559808353',role:'resident'},
+      {id:'gr12',name:'GHADAH',phone:'0536229549',role:'resident'},
+      {id:'gr13',name:'AMERAH',phone:'0554141529',role:'resident'},
+      {id:'gr14',name:'GHAIDA',phone:'0504627835',role:'resident'},
+      {id:'gr15',name:'EBTISAM',phone:'0506529725',role:'resident'},
+      {id:'gr16',name:'DINA',phone:'0558728425',role:'resident'},
+      {id:'gr17',name:'YAZID',phone:'0505766733',role:'resident'},
+      {id:'gr18',name:'QIRNAS',phone:'0535874788',role:'resident'},
+      {id:'gr19',name:'RAYAN',phone:'0554593576',role:'resident'},
+    ],
+    schedule:{
+      "1/2":{r1:"NADA",r2:"NORAH",consultant:"MASOUD"},
+      "2/2":{r1:"MALIK",r2:"",consultant:"SHANAWANI"},
+      "3/2":{r1:"RAGHAD",r2:"BETOL",consultant:"BAHOOTH"},
+      "4/2":{r1:"ABDULWAHAB",r2:"GHAIDA",consultant:"GHADEER"},
+      "5/2":{r1:"ABDULELAH",r2:"DINA",consultant:"ESRAA"},
+      "6/2":{r1:"RAGHAD",r2:"ZAINAB",consultant:"YASSER"},
+      "7/2":{r1:"NADA",r2:"MALIK",consultant:"YASSER"},
+      "8/2":{r1:"AMERAH",r2:"FARIS",consultant:"SAUD"},
+      "9/2":{r1:"NADA",r2:"EBTISAM",consultant:"BAHOOTH"},
+      "10/2":{r1:"GHADAH",r2:"ZAINAB",consultant:"FAHD"},
+      "11/2":{r1:"NADA",r2:"NORAH",consultant:"GHADEER"},
+      "12/2":{r1:"AMERAH",r2:"MALIK",consultant:"SAUD"},
+      "13/2":{r1:"GHADAH",r2:"DINA",consultant:"TASSAN"},
+      "14/2":{r1:"ABDULELAH",r2:"NOUF",consultant:"TASSAN"},
+      "15/2":{r1:"RAGHAD",r2:"BETOL",consultant:"YASSER"},
+      "16/2":{r1:"ABDULWAHAB",r2:"RUBA",consultant:"MASOUD"},
+      "17/2":{r1:"AMERAH",r2:"GHAIDA",consultant:"ESRAA"},
+      "18/2":{r1:"ABDULELAH",r2:"DINA",consultant:"FAHD"},
+      "19/2":{r1:"GHADAH",r2:"NORAH",consultant:"GHADEER"},
+      "20/2":{r1:"AMERAH",r2:"EBTISAM",consultant:"BAHOOTH"},
+      "21/2":{r1:"RAGHAD",r2:"RUBA",consultant:"BAHOOTH"},
+      "22/2":{r1:"GHADAH",r2:"FARIS",consultant:"MASOUD"},
+      "23/2":{r1:"AMERAH",r2:"BETOL",consultant:"ANGARI"},
+      "24/2":{r1:"RAGHAD",r2:"EBTISAM",consultant:"ESRAA"},
+      "25/2":{r1:"ABDULWAHAB",r2:"NOUF",consultant:"SHANAWANI"},
+      "26/2":{r1:"ABDULELAH",r2:"ZAINAB",consultant:"FAHD"},
+      "27/2":{r1:"GHADAH",r2:"FARIS",consultant:"ANGARI"},
+      "28/2":{r1:"ABDULWAHAB",r2:"GHAIDA",consultant:"ANGARI"},
+    }
+  },
+};
+
+// Load saved data then merge any new preloaded depts
+load();
+mergePreloaded();
+
+document.getElementById('todayText').textContent = formatArabicDate();
+renderSidebar();
+renderDashboard();
 </script>
-
-<!-- ══════════════════════════════════════════════════
-     GOOGLE APPS SCRIPT CODE - Copy to script.google.com
-════════════════════════════════════════════════════
-
-function doGet(e) {
-  const action = e.parameter.action;
-  if (action === 'ping') return json({ status: 'ok' });
-  if (action === 'load') return json(loadData());
-  return json({ status: 'error', message: 'Unknown action' });
-}
-
-function doPost(e) {
-  const body = JSON.parse(e.postData.contents);
-  if (body.action === 'save') {
-    saveData(body.data);
-    return json({ status: 'ok' });
-  }
-  return json({ status: 'error', message: 'Unknown action' });
-}
-
-function json(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-const SHEET_NAME = 'Acute Care Unit';
-
-function saveData(data) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName(SHEET_NAME);
-  if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
-  sheet.clearContents();
-
-  // Headers
-  sheet.getRange(1,1,1,8).setValues([['Bed','Status','MRN','Time File','Time ER','Nurse','Doctor','Last Updated']]);
-
-  // Bed rows
-  const rows = data.beds.map(b => [b.id, b.status, b.mrn, b.timeFile, b.timeER, b.nurse, b.doctor, data.timestamp]);
-  sheet.getRange(2, 1, rows.length, 8).setValues(rows);
-
-  // Team section
-  let r = data.beds.length + 4;
-  sheet.getRange(r, 1).setValue('TEAM ASSIGNMENT');
-  r++;
-  const t = data.team;
-  const teamRows = [
-    ['ED Team Leader', t.edLeader, '1st Triage', t.triage1],
-    ['Nursing Leader', t.nurseLeader, '2nd Triage', t.triage2],
-    ['IM 1st', t.im1?.spec, t.im1?.pager, t.im1?.phone],
-    ['IM 2nd', t.im2?.spec, t.im2?.pager, t.im2?.phone],
-    ['GS 1st', t.gs1?.spec, t.gs1?.pager, t.gs1?.phone],
-    ['GS 2nd', t.gs2?.spec, t.gs2?.pager, t.gs2?.phone],
-    ['Ortho 1st', t.orth1?.spec, t.orth1?.pager, t.orth1?.phone],
-    ['Ortho 2nd', t.orth2?.spec, t.orth2?.pager, t.orth2?.phone],
-    ['Radiology', t.rad?.spec, t.rad?.pager, t.rad?.phone],
-    ['Radiology US', t.radus?.spec, t.radus?.pager, t.radus?.phone],
-  ];
-  sheet.getRange(r, 1, teamRows.length, 4).setValues(teamRows);
-}
-
-function loadData() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_NAME);
-  if (!sheet) return { status: 'error', message: 'Sheet not found' };
-
-  const rows = sheet.getDataRange().getValues();
-  const beds = [];
-  for (let i = 1; i < rows.length; i++) {
-    if (!rows[i][0] || isNaN(rows[i][0])) break;
-    beds.push({ id: rows[i][0], status: rows[i][1], mrn: rows[i][2],
-      timeFile: rows[i][3], timeER: rows[i][4], nurse: rows[i][5], doctor: rows[i][6] });
-  }
-  return { status: 'ok', data: { beds } };
-}
-
-════════════════════════════════════════════════════ -->
 </body>
 </html>
